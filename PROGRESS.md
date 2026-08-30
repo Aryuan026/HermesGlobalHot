@@ -23,6 +23,12 @@
   execution registration orders, late provider-body expansion, attempt
   expiry/cap, metadata load order, and Global Hot drift without poisoning
   Continuity delivery.
+- Real-host wiring proof: Hermes discovered both real directory plugins and
+  ran two production conversation turns. Continuity and Global Hot were each
+  exact-once in both final provider bodies; Global Hot wrote two canonical
+  delivery receipts, manager restart preserved Continuity revision readback,
+  and a real provider-error turn wrote no new receipt. CLI and gateway-tagged
+  platform contexts were exercised locally; no live channel is claimed.
 - Publication: the prior exact revision received a second external review.
   Its source/product, attempt-lifetime, and metadata-ownership findings are
   incorporated in this replacement root; repeat exact-revision review remains
@@ -37,5 +43,5 @@
   the Hermes production path renders only `human_input`, `scheduled_input`,
   and `assistant_outcome` with closed source class and actual Hermes source.
 
-The next status update should record the repeat external-review result against
-the exact replacement revision.
+The next review should focus on practical installation, patch replay, upgrade,
+rollback, latency, and live cross-mouth canaries against the exact revision.

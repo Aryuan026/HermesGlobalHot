@@ -38,5 +38,27 @@ Preserve these owner and provenance boundaries:
 - Do not describe the plugin as published, installed, enabled, deployed, or
   live-verified until that exact state has been demonstrated.
 
+## Integration and audit truth
+
+- A unit, runtime-helper, or registry test cannot prove host wiring. Delivery
+  claims require real Hermes discovery and `AIAgent.run_conversation`, the
+  final SDK provider body, production post/error hooks, and the real Global Hot
+  and Continuity SQLite stores.
+- Report only the highest proven layer: code-correct -> discovered/registered
+  -> request projected -> final provider body -> post-settled -> next-turn
+  readback -> restart readback -> surface-observed. Never promote an earlier
+  Green layer into a later one.
+- Reproduce an alleged host-order bug on the exact Hermes revision before
+  changing production code. A manual execution/settle/post helper is not proof
+  of the host's current order.
+- After code correctness and the real-host gate are Green, default review moves
+  to practical integration: dependency/version resolution, patch replay,
+  config/doctor output, per-mouth latency, operator-visible failures, rollback,
+  upgrades, and real channel canaries. Reopen compiler/runtime design only for
+  a new reproducible regression or an owner-requested product change.
+- The cross-repo gate lives at
+  `HermesContinuity/tests/test_real_host_entrypoint.py`; run it against exact
+  Hermes and Global Hot trees rather than duplicating its host sequence here.
+
 Use the smallest compatible change and keep external review, installation, and
 deployment as separate gates.
