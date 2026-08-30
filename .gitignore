@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+.env
+.venv/
+venv/
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite3-*
+runtime/
+logs/
+config.local.*
+.coverage
+htmlcov/
