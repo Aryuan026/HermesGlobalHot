@@ -16,11 +16,13 @@ The Hermes compatibility lineage is:
   `20b7b9a3b4f66871686503f222e39f4c55a058a5`,
   `81f8fa21167b1fcd3929b27ee172b6cf7a94ec21`,
   `5e1b05f04b193ade4eb16fb28f29198b0ee672a3`,
-  `7a5c6ca23b544d73fb37a3a1c7d8b08d1a82938c`, and
-  `7c183e81832c81e29f6d095a15bb7c8cd080ee5c`;
+  `7a5c6ca23b544d73fb37a3a1c7d8b08d1a82938c`,
+  `7c183e81832c81e29f6d095a15bb7c8cd080ee5c`,
+  `113b4ab5285f92a1013c6a494eb33260a7f70140`, and
+  `969cf5bdbc3a110e475c02ed8e4ee84f64be32ed`;
 - Hermes Continuity service contract: `hermes-continuity:canonical-source.v2`,
   plugin version `>=0.4,<1`, exact paired candidate
-  `3b036e850223b9d8c8630574b71c9ee4cb00f766`.
+  `5c0b84ea9721711a85d8856638426449d68c1057`.
 
 ## Extraction matrix
 

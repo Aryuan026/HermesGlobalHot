@@ -14,11 +14,11 @@
   projection, compatible provider fallback, tool follow-up, continuation, final
   provider-body proof, and body-free delivery metadata are implemented.
 - Host prerequisite: generic Hermes seams through
-  `7c183e81832c81e29f6d095a15bb7c8cd080ee5c`; Continuity `>=0.4,<1`.
+  `969cf5bdbc3a110e475c02ed8e4ee84f64be32ed`; Continuity `>=0.4,<1`.
 - Verification: the public-shaped suite runs 95 cases with nine expected
   real-host skips and 86 passes; exact Hermes
-  `7c183e81832c81e29f6d095a15bb7c8cd080ee5c` plus Continuity
-  `3b036e850223b9d8c8630574b71c9ee4cb00f766` runs all 95/95 Green. The
+  `969cf5bdbc3a110e475c02ed8e4ee84f64be32ed` plus Continuity
+  `5c0b84ea9721711a85d8856638426449d68c1057` runs all 95/95 Green. The
   focused runtime/metadata/registration matrix is 52/52 Green, including both
   execution registration orders, late provider-body expansion, attempt
   expiry/cap, metadata load order, and Global Hot drift without poisoning
@@ -26,9 +26,16 @@
 - Real-host wiring proof: Hermes discovered both real directory plugins and
   ran two production conversation turns. Continuity and Global Hot were each
   exact-once in both final provider bodies; Global Hot wrote two canonical
-  delivery receipts, manager restart preserved Continuity revision readback,
-  and a real provider-error turn wrote no new receipt. CLI and gateway-tagged
-  platform contexts were exercised locally; no live channel is claimed.
+  delivery receipts, manager unload/reload preserved Continuity revision
+  readback, and a real provider-error turn wrote no new receipt. CLI and
+  gateway-tagged platform contexts were exercised locally; no live channel is
+  claimed.
+- Plugin lifecycle proof: exact public candidates `698fd4d` and `9f01f61`
+  installed through the official CLI into a disposable profile with full
+  commit pins and remained disabled; Continuity passed native Doctor, this
+  plugin passed joint Doctor with Continuity, and official removal left no
+  plugin directory or install-metadata entry. This is not target-profile
+  deployment.
 - Publication: the prior exact revision received a second external review.
   Its source/product, attempt-lifetime, and metadata-ownership findings are
   incorporated in this replacement root; repeat exact-revision review remains

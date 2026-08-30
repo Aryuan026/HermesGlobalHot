@@ -53,7 +53,7 @@ storage bug.
 1. Keep donor, runtime, metadata, and request-carrier suites Green, then pass
    the cross-repo real-host proof through plugin discovery,
    `AIAgent.run_conversation`, final provider body, post/error settlement,
-   SQLite readback, and manager restart.
+   SQLite readback, and manager unload/reload.
 2. Replace the obsolete two-commit repository history with the reviewed tree.
 3. Push the exact revision for external web review.
 4. Address external findings and record the accepted revision.

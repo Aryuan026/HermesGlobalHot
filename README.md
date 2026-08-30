@@ -103,14 +103,15 @@ The reviewed host lineage is:
 - Hermes upstream 0.20.5: `fcbd1076a93841fa88855acce810e342a5b78101`;
 - owner overlay: `c7c36f36ccee592a96f90e8acd9c6401808a02ad`;
 - final generic host seams through:
-  `7c183e81832c81e29f6d095a15bb7c8cd080ee5c`;
+  `969cf5bdbc3a110e475c02ed8e4ee84f64be32ed`;
 - Hermes Continuity: `>=0.4,<1`; paired candidate
-  `3b036e850223b9d8c8630574b71c9ee4cb00f766`.
+  `5c0b84ea9721711a85d8856638426449d68c1057`.
 
-The eight ordered Hermes patches are published by
+The ten ordered Hermes patches are published by
 [Hermes Continuity](https://github.com/Aryuan026/HermesContinuity/tree/main/patches).
-Registration fails visibly when the service, middleware, or transport schema is
-missing or incompatible.
+The first eight provide the runtime schemas; the last two align official
+manifest-v2 installation and joint Doctor. Registration fails visibly when the
+service, middleware, or transport schema is missing or incompatible.
 
 ## Test
 
@@ -123,8 +124,8 @@ Real Hermes and dual-plugin integration tests are opt-in through
 fixture is synthetic. Public unit CI and compatible-Hermes integration runs are
 reported separately; a Green unit workflow is not presented as host delivery
 proof. The current public-shaped run covers 95 cases: 86 pass with nine
-expected real-host skips. Against exact Hermes `7c183e8` and Continuity
-`3b036e8`, all 95 cases run and pass; the focused runtime, metadata, and
+expected real-host skips. Against exact Hermes `969cf5b` and Continuity
+`5c0b84e`, all 95 cases run and pass; the focused runtime, metadata, and
 registration matrix is 52/52.
 
 The previously published revision received external review. This corrected
