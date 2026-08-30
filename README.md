@@ -108,7 +108,7 @@ The reviewed host lineage is:
   `5c0b84ea9721711a85d8856638426449d68c1057`.
 
 The ten ordered Hermes patches are published by
-[Hermes Continuity](https://github.com/Aryuan026/HermesContinuity/tree/main/patches).
+[Hermes Continuity](https://github.com/Aryuan026/HermesContinuity/tree/5c0b84ea9721711a85d8856638426449d68c1057/patches).
 The first eight provide the runtime schemas; the last two align official
 manifest-v2 installation and joint Doctor. Registration fails visibly when the
 service, middleware, or transport schema is missing or incompatible.
