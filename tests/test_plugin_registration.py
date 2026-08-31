@@ -72,7 +72,13 @@ def host_modules(schema: str = "hermes.middleware.v2") -> dict[str, types.Module
     middleware = types.ModuleType("hermes_cli.middleware")
     middleware.MIDDLEWARE_SCHEMA_VERSION = schema
     middleware.TRANSPORT_SCHEMA_VERSION = "hermes.transport.v3"
-    return {"hermes_cli": hermes_cli, "hermes_cli.middleware": middleware}
+    request_overlay = types.ModuleType("hermes_cli.request_overlay")
+    request_overlay.REQUEST_OVERLAY_SCHEMA_VERSION = "hermes.request_overlay.v2"
+    return {
+        "hermes_cli": hermes_cli,
+        "hermes_cli.middleware": middleware,
+        "hermes_cli.request_overlay": request_overlay,
+    }
 
 
 class PluginRegistrationTests(unittest.TestCase):
@@ -155,6 +161,19 @@ class PluginRegistrationTests(unittest.TestCase):
         with patch.dict(sys.modules, modules):
             with self.assertRaisesRegex(RuntimeError, "hermes.transport.v3"):
                 plugin.register(self.ctx)
+
+    def test_request_overlay_v1_fails_before_metadata_or_registration(self):
+        modules = host_modules()
+        modules["hermes_cli.request_overlay"].REQUEST_OVERLAY_SCHEMA_VERSION = (
+            "hermes.request_overlay.v1"
+        )
+        with patch.dict(sys.modules, modules):
+            with self.assertRaisesRegex(RuntimeError, "hermes.request_overlay.v2"):
+                plugin.register(self.ctx)
+
+        self.assertFalse((self.data_dir / "global_hot.sqlite3").exists())
+        self.assertEqual(self.ctx.middleware, [])
+        self.assertEqual(self.ctx.hooks, [])
 
     def test_manifest_has_no_model_tool_or_cursor_configuration(self):
         manifest = (ROOT / "plugin.yaml").read_text(encoding="utf-8")

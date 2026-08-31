@@ -22,7 +22,7 @@ Preserve these owner and provenance boundaries:
   supported physical request.
 - Verify delivery against `hermes.transport.v3` final `provider_body`; do not
   settle from middleware projection or provider return alone.
-- Use Hermes `hermes.request_overlay.v1` for carrier ownership, scoped removal,
+- Use Hermes `hermes.request_overlay.v2` for carrier ownership, scoped removal,
   canonical request hashes, and final-budget dispositions. Do not recreate a
   plugin-local projector.
 - Use only host-resolved context windows with explicit provenance. Unknown or

@@ -14,14 +14,15 @@
   projection, compatible provider fallback, tool follow-up, continuation, final
   provider-body proof, and body-free delivery metadata are implemented.
 - Host prerequisite: generic Hermes seams through
-  `ccd7bf350ca54a44b7351904e079f5ffdb64eec0`; Continuity `>=0.4,<1`.
-- Verification: the public-shaped plugin suite runs 77 cases with eleven expected
-  real-host skips and 66 passes; public CI also replays all eleven host patches
-  and runs the 17 shared-overlay tests. Exact Hermes `ccd7bf3` plus Continuity
-  `559512c549db14fc64d73419f76e0682b7375429` runs all 77/77 Green,
-  including both two-plugin final-guard orders, late provider-body expansion,
-  attempt expiry/cap, metadata load order, and Global Hot drift without
-  poisoning Continuity delivery.
+  `5a680e5e38625fb3275b4bf6973a40d089ec11a7`; Continuity `>=0.4,<1`, exact
+  paired candidate `9a98acfe53ab74be5dae0b86c9b0303a9dab96bc`.
+- Verification: public CI replays all twelve host patches, installs the
+  materialized runtime, exports the real-host roots, runs the shared overlay
+  and middleware tests, then runs the Global Hot suite and Continuity's paired
+  production entrypoint. The exact local Hermes + Continuity matrix is 79/79
+  Green and covers both two-plugin final-guard orders, late provider-body
+  expansion, attempt expiry/cap, metadata load order, and Global Hot drift
+  without poisoning Continuity delivery.
 - Real-host wiring proof: Hermes discovered both real directory plugins and
   ran two production conversation turns. Continuity and Global Hot were each
   exact-once in both final provider bodies; Global Hot wrote two canonical

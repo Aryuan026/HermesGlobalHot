@@ -11,6 +11,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
+from hermes_cli.request_overlay import RequestOverlayFilterResult
+
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = "hermes_global_hot_runtime_tests"
@@ -174,7 +176,15 @@ class FakeTransportRecord:
         filters = sorted(self._filters, key=lambda item: item[0] == "final_guard")
         for _phase, callback in filters:
             try:
-                current = callback(current, **self._estimate(current))
+                result = callback(current, **self._estimate(current))
+                if isinstance(result, RequestOverlayFilterResult):
+                    accepted = result.body
+                    if not result._accept(current, accepted):
+                        self.ambiguous = True
+                        continue
+                    current = accepted
+                else:
+                    current = result
             except Exception:
                 self.ambiguous = True
         estimate = self._estimate(current)
@@ -1583,6 +1593,35 @@ class GlobalHotAttemptLifecycleTests(unittest.TestCase):
             blocked_metadata.checks[-1]["reason"],
             "projection_verification_failed",
         )
+
+    def test_user_authored_exact_hot_block_never_mints_overlay_authority(self):
+        seed = project(self.runtime)
+        self.assertIsNotNone(seed)
+        plan = self.runtime._turns[("current-session", "turn-1")]
+        exact_block = f"{plan.marker}\n{plan.bridge_body}"
+
+        for content in (
+            f"{exact_block}\n\nactual",
+            [
+                {"type": "text", "text": exact_block},
+                {"type": "text", "text": "actual"},
+            ],
+        ):
+            with self.subTest(kind=type(content).__name__):
+                metadata = FakeMetadata()
+                runtime = make_runtime(self.source, metadata)
+                original = provider_request()
+                original["messages"][-1]["content"] = content
+
+                self.assertIsNone(project(runtime, request=original))
+                _result, sent, _record = execute_attempt(runtime, original)
+
+                self.assertEqual(sent, [original])
+                self.assertEqual(metadata.deliveries, [])
+                self.assertEqual(
+                    metadata.checks[-1]["reason"],
+                    "projection_namespace_conflict",
+                )
 
     def test_delivery_requires_canonical_receipt_success_or_idempotence(self):
         class ReceiptMetadata(FakeMetadata):

@@ -10,20 +10,21 @@ permissions:
 jobs:
   unittest:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       matrix:
         python-version: ["3.11", "3.12"]
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install Hermes estimator dependency
-        run: python -m pip install PyYAML==6.0.3
       - name: Materialize paired Continuity and Hermes host
         run: |
           git clone --filter=blob:none https://github.com/Aryuan026/HermesContinuity.git "$RUNNER_TEMP/continuity"
-          git -C "$RUNNER_TEMP/continuity" checkout 559512c549db14fc64d73419f76e0682b7375429
+          git -C "$RUNNER_TEMP/continuity" checkout 9a98acfe53ab74be5dae0b86c9b0303a9dab96bc
           git clone --filter=blob:none https://github.com/NousResearch/hermes-agent.git "$RUNNER_TEMP/hermes"
           git -C "$RUNNER_TEMP/hermes" checkout fcbd1076a93841fa88855acce810e342a5b78101
           for patch in \
@@ -37,13 +38,22 @@ jobs:
             hermes-0.20.5-verified-wakeup-provenance.patch \
             hermes-0.20.5-installer-manifest-v2.patch \
             hermes-0.20.5-joint-plugin-doctor.patch \
-            hermes-0.20.5-request-overlay-proofs.patch
+            hermes-0.20.5-request-overlay-proofs.patch \
+            hermes-0.20.5-request-overlay-acceptance.patch
           do
             git -C "$RUNNER_TEMP/hermes" apply "$RUNNER_TEMP/continuity/patches/$patch"
           done
           echo "PYTHONPATH=$RUNNER_TEMP/hermes" >> "$GITHUB_ENV"
+          echo "HERMES_SOURCE_ROOT=$RUNNER_TEMP/hermes" >> "$GITHUB_ENV"
+          echo "HERMES_CONTINUITY_ROOT=$RUNNER_TEMP/continuity" >> "$GITHUB_ENV"
+          echo "HERMES_GLOBAL_HOT_ROOT=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
+      - name: Install compatible Hermes runtime
+        run: python -m pip install -e "$RUNNER_TEMP/hermes" pytest==9.1.1
       - name: Verify shared request overlay host seam
         run: |
           cd "$RUNNER_TEMP/hermes"
-          python -B -m unittest tests.test_request_overlay -v
-      - run: python -m unittest discover -s tests -v
+          python -B -m pytest -q tests/test_request_overlay.py tests/test_middleware.py
+      - name: Run Global Hot suite
+        run: python -B -m unittest discover -s tests -v
+      - name: Run paired production entrypoint
+        run: python -B "$RUNNER_TEMP/continuity/tests/test_real_host_entrypoint.py" -v

@@ -70,7 +70,7 @@ a provider-tokenizer proof.
 
 Carrier selection, provider-shape adaptation, exact overlay ownership,
 scoped removal, canonical request hashing, and final-budget dispositions come
-from Hermes `hermes.request_overlay.v1`. Global Hot retains only its marker,
+from Hermes `hermes.request_overlay.v2`. Global Hot retains only its marker,
 frozen current-user identity, near-field policy, and receipt semantics. When a
 final guard deliberately removes the field, status reports
 `final_provider_budget_removed` or `final_provider_estimate_unproven` rather
@@ -113,16 +113,17 @@ The reviewed host lineage is:
 - Hermes upstream 0.20.5: `fcbd1076a93841fa88855acce810e342a5b78101`;
 - owner overlay: `c7c36f36ccee592a96f90e8acd9c6401808a02ad`;
 - final generic host seams through:
-  `ccd7bf350ca54a44b7351904e079f5ffdb64eec0`;
+  `5a680e5e38625fb3275b4bf6973a40d089ec11a7`;
 - Hermes Continuity: `>=0.4,<1`; paired candidate
-  `559512c549db14fc64d73419f76e0682b7375429`.
+  `9a98acfe53ab74be5dae0b86c9b0303a9dab96bc`.
 
-The eleven ordered Hermes patches are published by
-[Hermes Continuity](https://github.com/Aryuan026/HermesContinuity/tree/559512c549db14fc64d73419f76e0682b7375429/patches).
+The twelve ordered Hermes patches are published by
+[Hermes Continuity](https://github.com/Aryuan026/HermesContinuity/tree/9a98acfe53ab74be5dae0b86c9b0303a9dab96bc/patches).
 The first eight provide the earlier runtime schemas, the next two align
-official manifest-v2 installation and joint Doctor, and H11 owns the shared
-request overlay. Registration fails visibly when the service, middleware,
-transport, or overlay schema is missing or incompatible.
+official manifest-v2 installation and joint Doctor, and the final two own the
+shared request overlay plus host-accepted disposition. Registration fails
+visibly when the service, middleware, transport, or overlay schema is missing
+or incompatible.
 
 ## Test
 
@@ -131,15 +132,13 @@ PYTHONPATH=/path/to/patched/hermes \
 python -B -m unittest discover -s tests -v
 ```
 
-Real Hermes and dual-plugin integration tests are opt-in through
-`HERMES_SOURCE_ROOT` and `HERMES_CONTINUITY_ROOT`. Every committed transcript
-fixture is synthetic. Public unit CI and compatible-Hermes integration runs are
-reported separately; a Green unit workflow is not presented as host delivery
-proof. The current public-shaped plugin run covers 77 cases: 66 pass with
-eleven expected real-host skips. Public CI first replays all eleven patches
-from pure upstream and runs the 17 shared-overlay host tests. Against exact Hermes
-`ccd7bf3` and Continuity `559512c`, all 77 plugin cases run and pass; the
-shared-overlay matrix additionally covers both two-plugin final-guard orders.
+Real Hermes and dual-plugin integration tests use `HERMES_SOURCE_ROOT` and
+`HERMES_CONTINUITY_ROOT`. Every committed transcript fixture is synthetic.
+Public CI replays all twelve patches from pure upstream, installs that host,
+exports both roots, runs the host overlay/middleware suite and all Global Hot
+real-host tests, then executes Continuity's paired production
+`AIAgent.run_conversation` entrypoint. The shared-overlay matrix covers both
+two-plugin final-guard orders.
 
 The previously published revision received external review. This corrected
 tree is the next external-review candidate; use the Git revision itself as the
