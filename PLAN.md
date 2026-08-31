@@ -42,8 +42,9 @@ storage bug.
   unambiguous final provider-body record.
 - Bound orphan physical attempts by count and TTL, protect active execution
   from sweeping, and make late terminal hooks no-ops after authority expires.
-- Claim the metadata database with a plugin owner and reject state, foreign,
-  or unclaimed nonempty SQLite files before creating Global Hot tables.
+- Fix the receipt database inside the active profile's host-owned plugin-data
+  realm. Claim it with a plugin owner and reject canonical, foreign, or
+  unclaimed nonempty SQLite files before creating Global Hot tables.
 - Leave `codex_app_server` and subagent calls unsupported; remove Global Hot
   from MoA and unproven smaller-window fallbacks so their providers receive the
   native request.

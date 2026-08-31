@@ -2,31 +2,10 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 from .metadata import GlobalHotMetadataStore
 from .runtime import GlobalHotRuntime, SOURCE_SERVICE_KEY
-
-
-def _path_setting(ctx: Any, key: str, fallback: Path) -> Path:
-    value = str(ctx.get_config(key, default="") or "").strip()
-    return Path(value).expanduser() if value else fallback
-
-
-def _same_database(left: str | Path, right: str | Path) -> bool:
-    left_path = Path(left).expanduser()
-    right_path = Path(right).expanduser()
-    try:
-        if left_path.resolve(strict=False) == right_path.resolve(strict=False):
-            return True
-        return bool(
-            left_path.exists()
-            and right_path.exists()
-            and left_path.samefile(right_path)
-        )
-    except (OSError, RuntimeError):
-        return False
 
 
 def _require_compatible_host(ctx: Any) -> None:
@@ -68,16 +47,7 @@ def register(ctx: Any) -> None:
         raise RuntimeError(
             "Hermes Global Hot requires service " + SOURCE_SERVICE_KEY
         )
-    metadata_path = _path_setting(
-        ctx,
-        "metadata_db",
-        Path(ctx.state.data_dir) / "global_hot.sqlite3",
-    )
-    state_path = Path(ctx.state.data_dir).parent.parent / "state.db"
-    if _same_database(state_path, metadata_path):
-        raise RuntimeError(
-            "Hermes Global Hot metadata_db must not alias Hermes state.db"
-        )
+    metadata_path = ctx.state.data_dir / "global_hot.sqlite3"
     runtime = GlobalHotRuntime(
         source_service,
         GlobalHotMetadataStore(metadata_path),

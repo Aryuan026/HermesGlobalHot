@@ -62,7 +62,6 @@ _CHECK_REASONS = {
         "projection_marker_conflict",
         "bridge_body_conflict",
         "projection_verification_failed",
-        "projected_request_over_context",
         "turn_plan_evicted",
         "execution_projection_drift",
         "attempt_capacity_exceeded",

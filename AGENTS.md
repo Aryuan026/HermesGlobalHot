@@ -27,8 +27,9 @@ Preserve these owner and provenance boundaries:
   run after ordinary transport transforms.
 - Never write message bodies to Global Hot metadata. Preserve latest-check and
   canonical-delivery truth as separate body-free surfaces.
-- Keep physical attempts bounded by TTL and count, and require the metadata
-  owner/path guards before any Global Hot table is created.
+- Keep physical attempts bounded by TTL and count, fix metadata under the
+  active profile's host-owned plugin-data realm, and require owner/schema
+  guards before any Global Hot table is created.
 - Keep `codex_app_server` unsupported; keep MoA and unproven smaller-window
   fallbacks native until a reviewed physical carrier/proof contract exists.
 - Runtime dependencies remain standard-library-only. Use

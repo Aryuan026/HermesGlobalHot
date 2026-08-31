@@ -11,8 +11,10 @@ level. Install only an exact reviewed revision.
   Continuity service response and live only for compilation/request projection.
 - The Global Hot SQLite ledger contains hashes, IDs, counts, statuses, and UTC
   timestamps only. It has no transcript-body column, FTS table, search index,
-  consumer cursor, or network client. The file is owner-claimed and rejects a
-  foreign owner, canonical Hermes tables, or an unclaimed nonempty database.
+  consumer cursor, or network client. Its locator is fixed under the active
+  profile's host-owned plugin-data namespace rather than caller configuration.
+  The file is owner-claimed and rejects a foreign owner, canonical Hermes
+  tables, or an unclaimed nonempty database.
 - Real conversation fixtures, databases, sidecars, logs, configuration,
   credentials, owner/channel IDs, and private paths must not enter Git.
 

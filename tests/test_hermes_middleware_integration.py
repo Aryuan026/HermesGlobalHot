@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import importlib
 import json
 import os
@@ -75,6 +76,33 @@ CONTINUITY_BLOCK = (
 )
 DOWNSTREAM_BLOCK = "<synthetic_downstream>additive</synthetic_downstream>"
 GLOBAL_HOT_PREFIX = "[GLOBAL HOT QUOTED REFERENCE "
+
+
+def _continuity_checkpoint(revision: int, body: str) -> dict:
+    return {
+        "schema": "thread_continuity_checkpoint.v2",
+        "revision": revision,
+        "recent_bridge": {
+            "schema": "thread_continuity_recent_bridge.v1",
+            "status": "ready",
+            "relation": "represented_in_recent_bridge",
+            "source_group_ids": ["synthetic-source-group"],
+            "source_group_fingerprints": ["f" * 64],
+            "source_slice_fingerprint": "d" * 64,
+            "reference_at": REFERENCE_AT,
+            "recent_horizon_hours": 72,
+            "source_token_limit": 24_000,
+            "output_token_limit": 2_048,
+            "body": body,
+            "body_sha256": hashlib.sha256(body.encode("utf-8")).hexdigest(),
+        },
+    }
+
+
+OLD_CONTINUITY_CHECKPOINT = _continuity_checkpoint(1, "synthetic old bridge")
+CANDIDATE_CONTINUITY_CHECKPOINT = _continuity_checkpoint(
+    2, "synthetic candidate bridge"
+)
 
 
 def _message(message_id: str, role: str, content: str) -> dict:
@@ -181,10 +209,7 @@ class _ContinuityAdapter:
                 "status": "ready",
                 "state": {
                     "revision": 1,
-                    "checkpoint": {
-                        "schema": "thread_continuity_checkpoint.v1",
-                        "summary_text": "synthetic old bridge",
-                    },
+                    "checkpoint": copy.deepcopy(OLD_CONTINUITY_CHECKPOINT),
                 },
             },
         }
@@ -220,11 +245,9 @@ class _ContinuityCompiler:
     async def __call__(self, _bundle, **_kwargs) -> dict:
         return {
             "status": "ready",
-            "checkpoint_candidate": {
-                "schema": "thread_continuity_checkpoint.v1",
-                "summary_text": "synthetic candidate bridge",
-                "source_group_ids": ["synthetic-source-group"],
-            },
+            "checkpoint_candidate": copy.deepcopy(
+                CANDIDATE_CONTINUITY_CHECKPOINT
+            ),
             "expected_revision": 1,
             "expected_pre_turn_source_snapshot": "e" * 64,
         }

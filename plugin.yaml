@@ -14,10 +14,6 @@ provides_hooks:
   - post_api_request
   - api_request_error
 config_schema:
-  metadata_db:
-    type: str
-    default: ""
-    description: Optional receipt database path; empty uses profile-scoped plugin data
   max_projection_chars:
     type: int
     default: 24000

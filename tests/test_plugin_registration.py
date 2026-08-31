@@ -3,7 +3,6 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
-import sqlite3
 import sys
 import tempfile
 import types
@@ -38,6 +37,7 @@ class FakeContext:
         self.state = types.SimpleNamespace(data_dir=data_dir)
         self.service = FakeSource() if service is ... else service
         self.configs = dict(configs or {})
+        self.config_reads: list[str] = []
         self.service_lookups: list[str] = []
         self.middleware: list[tuple[str, object]] = []
         self.hooks: list[tuple[str, object]] = []
@@ -45,6 +45,7 @@ class FakeContext:
         self.unload: list[object] = []
 
     def get_config(self, key, default=None):
+        self.config_reads.append(key)
         return self.configs.get(key, default)
 
     def get_service(self, name, default=None):
@@ -163,57 +164,108 @@ class PluginRegistrationTests(unittest.TestCase):
         self.assertNotIn("lookback_hours", manifest)
         self.assertNotIn("max_messages", manifest)
         self.assertNotIn("cursor", manifest)
+        self.assertNotIn("metadata_db", manifest)
         self.assertIn("attempt_ttl_seconds:", manifest)
         self.assertIn("type: float", manifest)
         self.assertIn("hard cap for frozen turn plans and live request attempts", manifest)
 
-    def test_metadata_path_cannot_alias_default_state_by_symlink_or_hardlink(self):
-        self.home.mkdir(parents=True)
-        state_path = self.home / "state.db"
-        state_path.write_bytes(b"Hermes state placeholder")
-        for kind in ("symlink", "hardlink"):
-            with self.subTest(kind=kind):
-                alias = self.data_dir / f"{kind}.sqlite3"
-                alias.parent.mkdir(parents=True, exist_ok=True)
-                if kind == "symlink":
-                    alias.symlink_to(state_path)
-                else:
-                    os.link(state_path, alias)
-                ctx = FakeContext(
-                    self.data_dir,
-                    configs={"metadata_db": str(alias)},
-                )
-                with patch.dict(sys.modules, host_modules()):
-                    with self.assertRaisesRegex(RuntimeError, "state.db"):
-                        plugin.register(ctx)
-                self.assertEqual(ctx.middleware, [])
-
-    def test_foreign_claimed_custom_metadata_path_fails_before_registration(self):
-        path = Path(self.temp.name) / "shared.sqlite3"
-        with sqlite3.connect(path) as connection:
-            connection.execute(
-                """
-                CREATE TABLE hermes_plugin_store_owner (
-                    singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
-                    owner_id TEXT NOT NULL UNIQUE
-                )
-                """
-            )
-            connection.execute(
-                "INSERT INTO hermes_plugin_store_owner VALUES (1, ?)",
-                ("hermes-continuity.v1",),
-            )
-        ctx = FakeContext(
-            self.data_dir,
-            configs={"metadata_db": str(path)},
-        )
-
+    def test_legacy_metadata_setting_cannot_escape_profile_realm(self):
+        outside = Path(self.temp.name) / "outside.sqlite3"
+        ctx = FakeContext(self.data_dir, configs={"metadata_db": str(outside)})
         with patch.dict(sys.modules, host_modules()):
-            with self.assertRaisesRegex(ValueError, "owner_conflict"):
-                plugin.register(ctx)
+            plugin.register(ctx)
 
-        self.assertEqual(ctx.middleware, [])
-        self.assertEqual(ctx.hooks, [])
+        self.assertNotIn("metadata_db", ctx.config_reads)
+        self.assertFalse(outside.exists())
+        self.assertTrue((self.data_dir / "global_hot.sqlite3").exists())
+
+
+class HermesPluginManagerIntegrationTests(unittest.TestCase):
+    def _source_root(self) -> str:
+        source_root = os.environ.get("HERMES_SOURCE_ROOT", "").strip()
+        if not source_root:
+            self.skipTest("set HERMES_SOURCE_ROOT to run against a Hermes checkout")
+        return source_root
+
+    def test_real_managers_keep_receipt_realms_profile_local(self):
+        source_root = self._source_root()
+        sys.path.insert(0, source_root)
+        try:
+            from hermes_constants import (
+                reset_hermes_home_override,
+                set_hermes_home_override,
+            )
+            from hermes_cli.plugins import PluginContext, PluginManager, PluginManifest
+
+            with tempfile.TemporaryDirectory() as temp_dir:
+                homes = [
+                    Path(temp_dir) / "profile-a",
+                    Path(temp_dir) / "profile-b",
+                ]
+                managers = []
+                sources = []
+                paths = []
+                try:
+                    for home in homes:
+                        manager = PluginManager(scope_key=str(home))
+                        source = FakeSource()
+                        token = set_hermes_home_override(home)
+                        try:
+                            PluginContext(
+                                PluginManifest(
+                                    name="hermes-continuity",
+                                    key="hermes-continuity",
+                                ),
+                                manager,
+                            ).register_service("canonical-source.v2", source)
+                            plugin.register(
+                                PluginContext(
+                                    PluginManifest(
+                                        name="hermes-global-hot",
+                                        key="hermes-global-hot",
+                                        path=str(ROOT),
+                                    ),
+                                    manager,
+                                )
+                            )
+                        finally:
+                            reset_hermes_home_override(token)
+                        managers.append(manager)
+                        sources.append(
+                            manager._get_plugin_service(
+                                "hermes-continuity:canonical-source.v2"
+                            )
+                        )
+                        matches = list(
+                            (home / "plugin-data").glob("*/global_hot.sqlite3")
+                        )
+                        self.assertEqual(len(matches), 1)
+                        paths.append(matches[0])
+
+                    self.assertIsNot(sources[0], sources[1])
+                    self.assertNotEqual(paths[0], paths[1])
+                    plugin.GlobalHotMetadataStore(paths[0]).record_check(
+                        session_id="session-a",
+                        turn_id="turn-a",
+                        status="native",
+                        reason="provider_headroom_unproven",
+                        updated_at="2026-08-31T12:00:00+00:00",
+                    )
+                    self.assertEqual(
+                        plugin.GlobalHotMetadataStore(paths[0]).status("session-a")[
+                            "status"
+                        ],
+                        "native",
+                    )
+                    self.assertEqual(
+                        plugin.GlobalHotMetadataStore(paths[1]).status()["status"],
+                        "no_check",
+                    )
+                finally:
+                    for manager in managers:
+                        manager.unload()
+        finally:
+            sys.path.remove(source_root)
 
 
 if __name__ == "__main__":

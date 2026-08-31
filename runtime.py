@@ -1162,37 +1162,6 @@ class GlobalHotRuntime:
             return None
         return window, usable_window, reserve, source, confidence
 
-    def _request_fits_context(
-        self, request: Mapping[str, Any], *, window: int, reserve: int
-    ) -> bool:
-        shape = _request_messages(request)
-        if shape is None or not all(isinstance(message, Mapping) for message in shape[1]):
-            return False
-        try:
-            rows = [dict(message) for message in shape[1]]
-            fixed_prompt = _safe_fixed_prompt(request, shape[1])
-            has_leading_prompt = bool(
-                rows
-                and str(rows[0].get("role") or "").strip().lower()
-                in {"system", "developer"}
-            )
-            if fixed_prompt and not has_leading_prompt:
-                rows = [*fixed_prompt, *rows]
-            message_tokens = int(self.estimator(rows))
-            shadow = {
-                key: value
-                for key, value in request.items()
-                if key not in {"messages", "input", "system", "instructions"}
-            }
-            non_message_tokens = (len(_json_bytes(shadow)) + 3) // 4
-        except Exception:
-            return False
-        return bool(
-            message_tokens >= 0
-            and non_message_tokens >= 0
-            and message_tokens + non_message_tokens + reserve <= window
-        )
-
     @staticmethod
     def _content_sha256(content: Any) -> str:
         try:
@@ -1642,17 +1611,6 @@ class GlobalHotRuntime:
                 api_request_id=api_request_id,
                 plan=plan,
                 reason="projection_verification_failed",
-            )
-            return None
-        if not self._request_fits_context(
-            next_request, window=usable_window, reserve=reserve
-        ):
-            self._record_native(
-                session_id=session_id,
-                turn_id=turn_id,
-                api_request_id=api_request_id,
-                plan=plan,
-                reason="projected_request_over_context",
             )
             return None
         turn_key = (session_id, turn_id)

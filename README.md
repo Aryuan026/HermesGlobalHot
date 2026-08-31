@@ -87,8 +87,10 @@ The plugin stores no conversation bodies. Its profile-local SQLite ledger
 contains session hashes, turn/request identities, source and plan digests,
 selection counts, statuses, and timestamps only. The ledger claims a closed
 plugin owner and refuses foreign-owned, canonical-Hermes, or unclaimed nonempty
-databases. Hermes remains the transcript owner; Continuity remains the
-canonical-source owner.
+databases. Its path is fixed at
+`plugin-data/<host-owned-plugin-namespace>/global_hot.sqlite3` inside the
+active Hermes profile; it is not a plugin setting. Hermes remains the transcript
+owner; Continuity remains the canonical-source owner.
 
 `api_mode=codex_app_server` and subagent calls are unsupported. MoA prepared
 requests do not currently expose an unambiguous final provider carrier, so
@@ -105,10 +107,10 @@ The reviewed host lineage is:
 - final generic host seams through:
   `969cf5bdbc3a110e475c02ed8e4ee84f64be32ed`;
 - Hermes Continuity: `>=0.4,<1`; paired candidate
-  `5c0b84ea9721711a85d8856638426449d68c1057`.
+  `de793fd256a3ffc983f7b42c7c676f6d5a82ddee`.
 
 The ten ordered Hermes patches are published by
-[Hermes Continuity](https://github.com/Aryuan026/HermesContinuity/tree/5c0b84ea9721711a85d8856638426449d68c1057/patches).
+[Hermes Continuity](https://github.com/Aryuan026/HermesContinuity/tree/de793fd256a3ffc983f7b42c7c676f6d5a82ddee/patches).
 The first eight provide the runtime schemas; the last two align official
 manifest-v2 installation and joint Doctor. Registration fails visibly when the
 service, middleware, or transport schema is missing or incompatible.
@@ -123,9 +125,9 @@ Real Hermes and dual-plugin integration tests are opt-in through
 `HERMES_SOURCE_ROOT` and `HERMES_CONTINUITY_ROOT`. Every committed transcript
 fixture is synthetic. Public unit CI and compatible-Hermes integration runs are
 reported separately; a Green unit workflow is not presented as host delivery
-proof. The current public-shaped run covers 95 cases: 86 pass with nine
+proof. The current public-shaped run covers 95 cases: 85 pass with ten
 expected real-host skips. Against exact Hermes `969cf5b` and Continuity
-`5c0b84e`, all 95 cases run and pass; the focused runtime, metadata, and
+`de793fd`, all 95 cases run and pass; the focused runtime, metadata, and
 registration matrix is 52/52.
 
 The previously published revision received external review. This corrected

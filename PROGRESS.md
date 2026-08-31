@@ -15,10 +15,10 @@
   provider-body proof, and body-free delivery metadata are implemented.
 - Host prerequisite: generic Hermes seams through
   `969cf5bdbc3a110e475c02ed8e4ee84f64be32ed`; Continuity `>=0.4,<1`.
-- Verification: the public-shaped suite runs 95 cases with nine expected
-  real-host skips and 86 passes; exact Hermes
+- Verification: the public-shaped suite runs 95 cases with ten expected
+  real-host skips and 85 passes; exact Hermes
   `969cf5bdbc3a110e475c02ed8e4ee84f64be32ed` plus Continuity
-  `5c0b84ea9721711a85d8856638426449d68c1057` runs all 95/95 Green. The
+  `de793fd256a3ffc983f7b42c7c676f6d5a82ddee` runs all 95/95 Green. The
   focused runtime/metadata/registration matrix is 52/52 Green, including both
   execution registration orders, late provider-body expansion, attempt
   expiry/cap, metadata load order, and Global Hot drift without poisoning
@@ -40,6 +40,10 @@
   Its source/product, attempt-lifetime, and metadata-ownership findings are
   incorporated in this replacement root; repeat exact-revision review remains
   the current gate.
+- Fixed profile-realm candidate: the body-free receipt database is pinned to
+  the active profile's host-owned plugin-data namespace, the obsolete
+  `metadata_db` setting is removed, and a real two-profile `PluginManager`
+  test proves independent ledgers after ambient profile overrides are reset.
 - Runtime status: not installed, not enabled, not deployed, and not validated
   in a live cross-mouth conversation.
 - Remaining long-input gate: exact carrier ownership proof still scans for the

@@ -1545,18 +1545,6 @@ class GlobalHotAttemptLifecycleTests(unittest.TestCase):
             "projection_verification_failed",
         )
 
-        over_metadata = FakeMetadata()
-        over = GlobalHotRuntime(
-            self.source,
-            over_metadata,
-            clock=lambda: iso(REFERENCE),
-            estimator=lambda rows: 100_000,
-        )
-        self.assertIsNone(project(over, turn_id="turn-over-context"))
-        self.assertEqual(
-            over_metadata.checks[-1]["reason"], "projected_request_over_context"
-        )
-
     def test_delivery_requires_canonical_receipt_success_or_idempotence(self):
         class ReceiptMetadata(FakeMetadata):
             def __init__(self, result):
