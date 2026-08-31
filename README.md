@@ -68,6 +68,14 @@ estimate includes messages, top-level prompts, tools/schema, attachments, and
 framing margin; it is still an explicitly labelled conservative heuristic, not
 a provider-tokenizer proof.
 
+Carrier selection, provider-shape adaptation, exact overlay ownership,
+scoped removal, canonical request hashing, and final-budget dispositions come
+from Hermes `hermes.request_overlay.v1`. Global Hot retains only its marker,
+frozen current-user identity, near-field policy, and receipt semantics. When a
+final guard deliberately removes the field, status reports
+`final_provider_budget_removed` or `final_provider_estimate_unproven` rather
+than mislabelling the expected native request as projection drift.
+
 A canonical delivery receipt is written only when that final body contains
 this exact projection once, fits the proven usable window under that estimate,
 the provider call succeeds, and `post_api_request` receives the same settled
@@ -105,19 +113,21 @@ The reviewed host lineage is:
 - Hermes upstream 0.20.5: `fcbd1076a93841fa88855acce810e342a5b78101`;
 - owner overlay: `c7c36f36ccee592a96f90e8acd9c6401808a02ad`;
 - final generic host seams through:
-  `969cf5bdbc3a110e475c02ed8e4ee84f64be32ed`;
+  `ccd7bf350ca54a44b7351904e079f5ffdb64eec0`;
 - Hermes Continuity: `>=0.4,<1`; paired candidate
-  `de793fd256a3ffc983f7b42c7c676f6d5a82ddee`.
+  `12858c987332f658e0d969e6a39f03ff972cd74e`.
 
-The ten ordered Hermes patches are published by
-[Hermes Continuity](https://github.com/Aryuan026/HermesContinuity/tree/de793fd256a3ffc983f7b42c7c676f6d5a82ddee/patches).
-The first eight provide the runtime schemas; the last two align official
-manifest-v2 installation and joint Doctor. Registration fails visibly when the
-service, middleware, or transport schema is missing or incompatible.
+The eleven ordered Hermes patches are published by
+[Hermes Continuity](https://github.com/Aryuan026/HermesContinuity/tree/12858c987332f658e0d969e6a39f03ff972cd74e/patches).
+The first eight provide the earlier runtime schemas, the next two align
+official manifest-v2 installation and joint Doctor, and H11 owns the shared
+request overlay. Registration fails visibly when the service, middleware,
+transport, or overlay schema is missing or incompatible.
 
 ## Test
 
 ```bash
+PYTHONPATH=/path/to/patched/hermes \
 python -B -m unittest discover -s tests -v
 ```
 
@@ -125,10 +135,11 @@ Real Hermes and dual-plugin integration tests are opt-in through
 `HERMES_SOURCE_ROOT` and `HERMES_CONTINUITY_ROOT`. Every committed transcript
 fixture is synthetic. Public unit CI and compatible-Hermes integration runs are
 reported separately; a Green unit workflow is not presented as host delivery
-proof. The current public-shaped run covers 95 cases: 85 pass with ten
-expected real-host skips. Against exact Hermes `969cf5b` and Continuity
-`de793fd`, all 95 cases run and pass; the focused runtime, metadata, and
-registration matrix is 52/52.
+proof. The current public-shaped plugin run covers 77 cases: 66 pass with
+eleven expected real-host skips. Public CI first replays all eleven patches from pure
+upstream and runs the 17 shared-overlay host tests. Against exact Hermes
+`ccd7bf3` and Continuity `12858c9`, all 77 plugin cases run and pass; the
+shared-overlay matrix additionally covers both two-plugin final-guard orders.
 
 The previously published revision received external review. This corrected
 tree is the next external-review candidate; use the Git revision itself as the

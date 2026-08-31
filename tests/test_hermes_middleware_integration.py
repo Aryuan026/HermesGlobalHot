@@ -214,10 +214,6 @@ class _ContinuityAdapter:
             },
         }
 
-    def compare_and_swap_checkpoint(self, session_id: str, **kwargs) -> dict:
-        self.cas_calls.append({"session_id": session_id, **copy.deepcopy(kwargs)})
-        return {"ok": True, "status": "applied"}
-
     def settle_checkpoint_delivery(self, session_id: str, **kwargs) -> dict:
         self.cas_calls.append(
             {
@@ -949,6 +945,100 @@ class DualRuntimeMiddlewareIntegrationTests(unittest.TestCase):
         self.assertEqual(len(self.adapter.cas_calls), 1)
         self.assertEqual(len(self.adapter.metadata_store.receipts), 1)
         self.assertEqual(self.global_hot_metadata.deliveries, [])
+
+    def test_both_overlays_shrink_cleanly_in_either_guard_order(self) -> None:
+        transform_ctx = _ctx(self.manager, "synthetic-final-expansion")
+
+        def expand(*, request, next_call, transport_record, **_kwargs):
+            def add_large_tool(body, **_estimate):
+                body["tools"] = [
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": "late",
+                            "description": "[LATE]" + ("x" * 20_000),
+                        },
+                    }
+                ]
+                return body
+
+            transport_record.register_provider_body_filter(add_large_tool)
+            return next_call(request)
+
+        transform_ctx.register_middleware("llm_execution", expand)
+        callbacks = dict(
+            zip(
+                self.manager._middleware_owners["llm_execution"],
+                self.manager._middleware["llm_execution"],
+            )
+        )
+
+        for index, guard_order in enumerate(
+            (
+                ("hermes-continuity", "hermes-global-hot"),
+                ("hermes-global-hot", "hermes-continuity"),
+            ),
+            start=1,
+        ):
+            with self.subTest(guard_order=guard_order):
+                owners = ["synthetic-final-expansion", *guard_order]
+                self.manager._middleware_owners["llm_execution"] = owners
+                self.manager._middleware["llm_execution"] = [
+                    callbacks[owner] for owner in owners
+                ]
+                context = _context(
+                    turn_id=f"turn-shrink-{index}",
+                    api_request_id=f"api-shrink-{index}",
+                    context_window_tokens=2_000,
+                )
+                projected = apply_llm_request_middleware(_request(), **context)
+                record = TransportRecord()
+                provider_requests: list[dict] = []
+
+                def terminal(request):
+                    record.mark_middleware_verified(request)
+                    with transport_record_scope(record):
+                        return relay_llm.call_provider_body(
+                            lambda **body: (
+                                provider_requests.append(copy.deepcopy(body))
+                                or {"ok": True}
+                            ),
+                            request,
+                        )
+
+                response = run_llm_execution_middleware(
+                    projected.payload,
+                    terminal,
+                    original_request=projected.original_payload,
+                    transport_record=record,
+                    **context,
+                )
+                record.settle()
+                invoke_hook(
+                    "post_api_request",
+                    transport_record=record,
+                    transport_schema_version=TRANSPORT_SCHEMA_VERSION,
+                    **context,
+                )
+
+                self.assertEqual(response, {"ok": True})
+                self.assertEqual(len(provider_requests), 1)
+                rendered = json.dumps(provider_requests[0], ensure_ascii=False)
+                self.assertIn("[LATE]", rendered)
+                self.assertNotIn(
+                    continuity_runtime_module.CONTINUITY_MARKER_NAMESPACE,
+                    rendered,
+                )
+                self.assertNotIn(GLOBAL_HOT_PREFIX, rendered)
+                self.assertFalse(record.ambiguous)
+                self.assertTrue(record.settled)
+                self.assertEqual(self.adapter.cas_calls, [])
+                self.assertEqual(self.adapter.metadata_store.receipts, [])
+                self.assertEqual(self.global_hot_metadata.deliveries, [])
+                self.assertEqual(
+                    self.global_hot_metadata.checks[-1]["reason"],
+                    "final_provider_budget_removed",
+                )
 
 
 if __name__ == "__main__":

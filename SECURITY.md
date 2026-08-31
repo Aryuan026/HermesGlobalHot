@@ -43,6 +43,11 @@ remain native. The final guard runs after ordinary provider-body transforms and
 uses the host's explicitly labelled heuristic-with-margin estimate. That
 estimate is not represented as exact provider tokenization.
 
+Hermes owns the process-private overlay proof and its closed disposition. A
+final-budget removal and an unproven-estimate removal are expected native
+outcomes, distinct from a changed or missing owner block; none can mint a
+delivery receipt.
+
 Process-private projection and transport attempts have a hard count cap and
 TTL. Expiry revokes later settlement; an execution already inside the provider
 boundary is protected until it exits, and a late post/error hook cannot revive

@@ -22,6 +22,9 @@ Preserve these owner and provenance boundaries:
   supported physical request.
 - Verify delivery against `hermes.transport.v3` final `provider_body`; do not
   settle from middleware projection or provider return alone.
+- Use Hermes `hermes.request_overlay.v1` for carrier ownership, scoped removal,
+  canonical request hashes, and final-budget dispositions. Do not recreate a
+  plugin-local projector.
 - Use only host-resolved context windows with explicit provenance. Unknown or
   fallback windows stay native, and the final provider-body budget guard must
   run after ordinary transport transforms.
@@ -32,8 +35,9 @@ Preserve these owner and provenance boundaries:
   guards before any Global Hot table is created.
 - Keep `codex_app_server` unsupported; keep MoA and unproven smaller-window
   fallbacks native until a reviewed physical carrier/proof contract exists.
-- Runtime dependencies remain standard-library-only. Use
-  `HERMES_SOURCE_ROOT` and `HERMES_CONTINUITY_ROOT` for real host integration.
+- Runtime dependencies remain standard-library-only beyond the compatible
+  Hermes host. Put that host on `PYTHONPATH`; use `HERMES_SOURCE_ROOT` and
+  `HERMES_CONTINUITY_ROOT` for real host integration.
 - Never commit real IDs, paths, secrets, configs, logs, databases, SQLite
   sidecars, runtime state, or conversation fixtures.
 - Do not describe the plugin as published, installed, enabled, deployed, or

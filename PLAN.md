@@ -38,6 +38,9 @@ storage bug.
   exist only in the frozen reference and provenance record.
 - Keep quoted history outside current-user instruction authority with an exact
   dynamic marker and explicit end boundary.
+- Use the generic Hermes request-overlay owner for provider carrier shapes,
+  scoped proof/removal, canonical hashes, and final-budget dispositions; keep
+  only Global Hot policy and identity in this plugin.
 - Settle delivery only from `post_api_request` against the same successful,
   unambiguous final provider-body record.
 - Bound orphan physical attempts by count and TTL, protect active execution

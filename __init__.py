@@ -24,6 +24,7 @@ def _require_compatible_host(ctx: Any) -> None:
             MIDDLEWARE_SCHEMA_VERSION,
             TRANSPORT_SCHEMA_VERSION,
         )
+        from hermes_cli.request_overlay import REQUEST_OVERLAY_SCHEMA_VERSION
     except ImportError as exc:
         raise RuntimeError(
             "Hermes Global Hot requires hermes.middleware.v2 and "
@@ -36,6 +37,8 @@ def _require_compatible_host(ctx: Any) -> None:
         )
     if TRANSPORT_SCHEMA_VERSION != "hermes.transport.v3":
         raise RuntimeError("Hermes Global Hot requires hermes.transport.v3")
+    if REQUEST_OVERLAY_SCHEMA_VERSION != "hermes.request_overlay.v1":
+        raise RuntimeError("Hermes Global Hot requires hermes.request_overlay.v1")
 
 
 def register(ctx: Any) -> None:

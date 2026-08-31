@@ -64,6 +64,8 @@ _CHECK_REASONS = {
         "projection_verification_failed",
         "turn_plan_evicted",
         "execution_projection_drift",
+        "final_provider_budget_removed",
+        "final_provider_estimate_unproven",
         "attempt_capacity_exceeded",
     },
     "receipt_failed": {"canonical_receipt_unavailable"},

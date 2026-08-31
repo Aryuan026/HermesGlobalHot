@@ -18,20 +18,21 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
 
+from hermes_cli.request_overlay import (
+    OVERLAY_KEPT,
+    OVERLAY_REMOVED_ESTIMATE_UNPROVEN,
+    OVERLAY_REMOVED_FINAL_BUDGET,
+    RequestOverlay,
+    canonical_request_sha256,
+    last_real_user_index,
+    project_request_overlay,
+    request_messages,
+)
+
 from .global_hot_compiler import (
     build_global_hot_context_plan,
     resolve_global_hot_context_plan,
 )
-from .request_projection import (
-    GLOBAL_HOT_END_BOUNDARY,
-    _last_real_user_index,
-    _request_messages,
-    _request_sha256,
-    _request_text_occurrences,
-    project_global_hot_request,
-    verify_global_hot_request_projection,
-)
-
 
 SOURCE_SERVICE_KEY = "hermes-continuity:canonical-source.v2"
 SOURCE_REQUEST_SCHEMA = "continuity_canonical_window_request.v2"
@@ -44,6 +45,8 @@ SOURCE_EXCLUDED_SOURCES = ("subagent", "tool")
 GLOBAL_HOT_MAX_ROWS = 3
 GLOBAL_HOT_MAX_CHARS = 4_000
 GLOBAL_HOT_MARKER_PREFIX = "[GLOBAL HOT QUOTED REFERENCE"
+GLOBAL_HOT_END_BOUNDARY = "[END GLOBAL HOT QUOTED REFERENCE]"
+_request_sha256 = canonical_request_sha256
 _TRANSPORT_SCHEMA_VERSION = "hermes.transport.v3"
 _TRUSTED_CONTEXT_CONFIDENCE = frozenset({"authoritative", "catalog", "cached"})
 _LOWER_CONFIDENCE_CONTEXT_MARGIN = 0.90
@@ -295,9 +298,9 @@ def _current_message_sha256(message: Mapping[str, Any]) -> str:
 def _text_anchor_present(candidate: str, anchor: str) -> bool:
     return bool(
         candidate == anchor
-        or candidate.startswith(anchor + "\n\n")
-        or candidate.endswith("\n\n" + anchor)
-        or f"\n\n{anchor}\n\n" in candidate
+        or candidate.startswith(anchor + "\n")
+        or candidate.endswith("\n" + anchor)
+        or f"\n{anchor}\n" in candidate
     )
 
 
@@ -803,10 +806,7 @@ class _TurnPlan:
 class _Projection:
     turn_key: tuple[str, str]
     attempt_seq: int
-    proof: dict[str, Any]
-    carrier_material_sha256: str
-    carrier_material_length: int
-    carrier_material_kind: str
+    overlay: RequestOverlay
     provider_key: tuple[str, str, str]
     request_model_sha256: str
     context_window_tokens: int
@@ -834,8 +834,7 @@ class GlobalHotRuntime:
         metadata_store: Any,
         *,
         source_resolver: Callable[[], Any] | None = None,
-        projector: Callable[..., dict[str, Any]] = project_global_hot_request,
-        verifier: Callable[..., dict[str, Any]] = verify_global_hot_request_projection,
+        projector: Callable[..., RequestOverlay] = project_request_overlay,
         estimator: Callable[[list[dict[str, Any]]], int] | None = None,
         clock: Callable[[], str] | None = None,
         max_projection_chars: int = 24_000,
@@ -849,7 +848,6 @@ class GlobalHotRuntime:
         self.source_resolver = source_resolver or (lambda: source_service)
         self.metadata_store = metadata_store
         self.projector = projector
-        self.verifier = verifier
         self.estimator = estimator or _default_estimator
         self.clock = clock or (lambda: datetime.now(timezone.utc).isoformat())
         self.max_projection_chars = max(1, int(max_projection_chars))
@@ -986,11 +984,11 @@ class GlobalHotRuntime:
         context_window_source: Any,
         context_window_confidence: Any,
     ) -> _TurnPlan:
-        shape = _request_messages(request)
+        shape = request_messages(request)
         if shape is None:
             return _TurnPlan("", reason="request_carrier_ambiguous")
         _request_key, messages = shape
-        current_index = _last_real_user_index(messages)
+        current_index = last_real_user_index(messages)
         if current_index < 0:
             return _TurnPlan("", reason="real_user_carrier_missing")
         if current_index != len(messages) - 1:
@@ -1081,12 +1079,12 @@ class GlobalHotRuntime:
         context_window_confidence: Any,
     ) -> _TurnPlan:
         turn_key = (session_id, turn_id)
-        shape = _request_messages(request)
+        shape = request_messages(request)
         current_sha = ""
         messages: list[Any] = []
         if shape is not None:
             messages = shape[1]
-            index = _last_real_user_index(messages)
+            index = last_real_user_index(messages)
             if index >= 0 and isinstance(messages[index], Mapping):
                 current_sha = _current_message_sha256(messages[index])
         with self._lock:
@@ -1163,24 +1161,6 @@ class GlobalHotRuntime:
         return window, usable_window, reserve, source, confidence
 
     @staticmethod
-    def _content_sha256(content: Any) -> str:
-        try:
-            return _request_sha256({"content": content})
-        except (TypeError, ValueError):
-            return ""
-
-    @classmethod
-    def _carrier_material(cls, content: Any) -> tuple[str, int, str]:
-        if isinstance(content, str):
-            kind, length = "string", len(content)
-        elif isinstance(content, list):
-            kind, length = "list", len(content)
-        else:
-            return "", 0, ""
-        digest = cls._content_sha256(content)
-        return (digest, length, kind) if digest else ("", 0, "")
-
-    @staticmethod
     def _request_model_sha256(request: Mapping[str, Any]) -> str:
         try:
             return _request_sha256(
@@ -1188,69 +1168,6 @@ class GlobalHotRuntime:
             )
         except (TypeError, ValueError):
             return ""
-
-    def _projection_material_exact(
-        self,
-        request: Mapping[str, Any],
-        projection: _Projection,
-        plan: _TurnPlan,
-    ) -> bool:
-        proof = projection.proof
-        shape = _request_messages(request)
-        if not isinstance(proof, Mapping) or shape is None:
-            return False
-        request_key, messages = shape
-        carrier_index = proof.get("carrier_index")
-        carrier_kind = str(proof.get("carrier_kind") or "")
-        if (
-            type(carrier_index) is not int
-            or not 0 <= carrier_index < len(messages)
-            or proof.get("message_count") != len(messages)
-            or not carrier_kind.startswith(f"{request_key}:")
-        ):
-            return False
-        message = messages[carrier_index]
-        if not isinstance(message, Mapping) or message.get("role") != "user":
-            return False
-        block = f"{plan.marker}\n{plan.bridge_body}"
-        if (
-            _request_text_occurrences(request, plan.marker) != 1
-            or _request_text_occurrences(request, plan.bridge_body) != 1
-            or _request_text_occurrences(request, block) != 1
-            or proof.get("bridge_body_sha256")
-            != hashlib.sha256(plan.bridge_body.encode("utf-8")).hexdigest()
-        ):
-            return False
-        content = message.get("content")
-        if carrier_kind.endswith(":string"):
-            if not isinstance(content, str) or content.count(f"{block}\n\n") != 1:
-                return False
-            length = projection.carrier_material_length
-            if projection.carrier_material_kind != "string" or length < 1:
-                return False
-            return any(
-                self._content_sha256(content[start : start + length])
-                == projection.carrier_material_sha256
-                for start in range(0, len(content) - length + 1)
-            )
-        if not isinstance(content, list) or projection.carrier_material_kind != "list":
-            return False
-        block_type = carrier_kind.rsplit(":", 1)[-1]
-        expected_block = (
-            {"text": block}
-            if block_type == "bedrock_text"
-            else {"type": block_type, "text": block}
-        )
-        if sum(item == expected_block for item in content) != 1:
-            return False
-        length = projection.carrier_material_length
-        if length < 1 or len(content) < length:
-            return False
-        return any(
-            self._content_sha256(content[start : start + length])
-            == projection.carrier_material_sha256
-            for start in range(0, len(content) - length + 1)
-        )
 
     def _scoped_projection_exact(
         self,
@@ -1263,7 +1180,7 @@ class GlobalHotRuntime:
         return bool(
             provider_key == projection.provider_key
             and self._request_model_sha256(request) == projection.request_model_sha256
-            and self._projection_material_exact(request, projection, plan)
+            and projection.overlay.native_request(request) is not None
         )
 
     def _provider_projection_exact(
@@ -1278,14 +1195,14 @@ class GlobalHotRuntime:
 
         if (
             provider_key != projection.provider_key
-            or self._request_model_sha256(request)
-            != projection.request_model_sha256
-            or not self._projection_material_exact(request, projection, plan)
-            or _request_text_occurrences(request, GLOBAL_HOT_END_BOUNDARY) != 1
+            or self._request_model_sha256(request) != projection.request_model_sha256
         ):
             return False
-        native_request = self._remove_bound_projection(request, projection, plan)
-        shape = _request_messages(native_request) if native_request is not None else None
+        native_request = projection.overlay.native_request(
+            request,
+            require_original_material=False,
+        )
+        shape = request_messages(native_request) if native_request is not None else None
         return bool(
             shape is not None
             and _request_has_current_anchor(
@@ -1302,57 +1219,23 @@ class GlobalHotRuntime:
         plan: _TurnPlan,
         provider_key: tuple[str, str, str],
     ) -> bool:
-        register_filter = getattr(
-            transport_record, "register_provider_body_filter", None
+        return projection.overlay.register_final_budget_guard(
+            transport_record,
+            context_window_tokens=projection.usable_context_window_tokens,
+            reserve_tokens=_reserved_output_tokens,
+            validator=lambda body, native: bool(
+                provider_key == projection.provider_key
+                and self._request_model_sha256(body) == projection.request_model_sha256
+                and (
+                    (shape := request_messages(native)) is not None
+                    and _request_has_current_anchor(
+                        shape[1],
+                        plan.current_sha256,
+                        plan.current_identity,
+                    )
+                )
+            ),
         )
-        if (
-            getattr(transport_record, "schema_version", None)
-            != _TRANSPORT_SCHEMA_VERSION
-            or not callable(register_filter)
-        ):
-            return False
-
-        def global_hot_budget_guard(
-            body: dict[str, Any],
-            *,
-            estimated_tokens: Any = None,
-            estimate_source: Any = None,
-            estimate_confidence: Any = None,
-        ) -> dict[str, Any]:
-            if not self._provider_projection_exact(
-                body,
-                projection,
-                plan,
-                provider_key=provider_key,
-            ):
-                raise ValueError("global_hot_final_body_drift")
-            reserve = _reserved_output_tokens(
-                body, projection.usable_context_window_tokens
-            )
-            estimate_valid = bool(
-                type(estimated_tokens) is int
-                and estimated_tokens >= 0
-                and str(estimate_source or "")
-                == "hermes.provider_body.rough.v1"
-                and str(estimate_confidence or "")
-                == "heuristic_with_margin"
-            )
-            if (
-                estimate_valid
-                and estimated_tokens + reserve
-                <= projection.usable_context_window_tokens
-            ):
-                return body
-            native = self._remove_bound_projection(body, projection, plan)
-            if native is None:
-                raise ValueError("global_hot_final_budget_unverifiable")
-            return native
-
-        try:
-            register_filter(global_hot_budget_guard, phase="final_guard")
-        except Exception:
-            return False
-        return True
 
     def _stage_provider_transport(
         self,
@@ -1371,6 +1254,7 @@ class GlobalHotRuntime:
                 != _TRANSPORT_SCHEMA_VERSION
                 or bool(getattr(transport_record, "ambiguous"))
                 or getattr(transport_record, "capture_count") != 1
+                or projection.overlay.disposition != OVERLAY_KEPT
             ):
                 return False
             provider_body = getattr(transport_record, "provider_body")
@@ -1429,36 +1313,8 @@ class GlobalHotRuntime:
         projection: _Projection,
         plan: _TurnPlan,
     ) -> dict[str, Any] | None:
-        if not self._projection_material_exact(request, projection, plan):
-            return None
-        shape = _request_messages(request)
-        if shape is None:
-            return None
-        request_key, messages = shape
-        carrier_index = int(projection.proof["carrier_index"])
-        carrier_kind = str(projection.proof["carrier_kind"])
-        message = messages[carrier_index]
-        content = message.get("content")
-        block = f"{plan.marker}\n{plan.bridge_body}"
-        projected_message = dict(message)
-        if carrier_kind.endswith(":string"):
-            token = f"{block}\n\n"
-            position = content.find(token)
-            projected_message["content"] = content[:position] + content[position + len(token) :]
-        else:
-            block_type = carrier_kind.rsplit(":", 1)[-1]
-            expected_block = (
-                {"text": block}
-                if block_type == "bedrock_text"
-                else {"type": block_type, "text": block}
-            )
-            projected_message["content"] = list(content)
-            projected_message["content"].remove(expected_block)
-        next_messages = list(messages)
-        next_messages[carrier_index] = projected_message
-        native_request = dict(request)
-        native_request[request_key] = next_messages
-        return native_request
+        del plan
+        return projection.overlay.native_request(request)
 
     def llm_request(
         self,
@@ -1478,7 +1334,6 @@ class GlobalHotRuntime:
         context_window_confidence: str = "unknown",
         **_kwargs: Any,
     ) -> dict[str, Any] | None:
-        del original_request
         session_id = str(session_id or "").strip()
         turn_id = str(turn_id or "").strip()
         api_request_id = str(api_request_id or "").strip()
@@ -1495,8 +1350,11 @@ class GlobalHotRuntime:
         with self._lock:
             self._projections.pop(attempt_key, None)
             self._transport.pop(attempt_key, None)
+        plan_request = (
+            original_request if isinstance(original_request, Mapping) else request
+        )
         plan = self._plan_for_request(
-            request,
+            plan_request,
             session_id=session_id,
             turn_id=turn_id,
             context_window_tokens=context_window_tokens,
@@ -1540,52 +1398,21 @@ class GlobalHotRuntime:
             )
             return None
         window, usable_window, reserve, source, confidence = budget
-        shape = _request_messages(request)
-        if shape is None:
-            self._record_native(
-                session_id=session_id,
-                turn_id=turn_id,
-                api_request_id=api_request_id,
-                plan=plan,
-                reason="request_carrier_ambiguous",
-            )
-            return None
-        carrier_index = _last_real_user_index(shape[1])
-        if carrier_index < 0 or not isinstance(shape[1][carrier_index], Mapping):
-            self._record_native(
-                session_id=session_id,
-                turn_id=turn_id,
-                api_request_id=api_request_id,
-                plan=plan,
-                reason="real_user_carrier_missing",
-            )
-            return None
-        carrier_digest, carrier_length, carrier_kind = self._carrier_material(
-            shape[1][carrier_index].get("content")
-        )
-        if not carrier_digest:
-            self._record_native(
-                session_id=session_id,
-                turn_id=turn_id,
-                api_request_id=api_request_id,
-                plan=plan,
-                reason="real_user_carrier_ambiguous",
-            )
-            return None
-        projected = self.projector(
+        overlay = self.projector(
             request,
+            marker_namespace=GLOBAL_HOT_MARKER_PREFIX,
+            end_boundary=GLOBAL_HOT_END_BOUNDARY,
             marker=plan.marker,
-            bridge_body=plan.bridge_body,
+            body=plan.bridge_body,
             max_projection_chars=self.max_projection_chars,
         )
-        proof = projected.get("proof") if isinstance(projected, Mapping) else None
-        next_request = projected.get("request") if isinstance(projected, Mapping) else None
         if (
-            not isinstance(proof, Mapping)
-            or proof.get("status") != "projected"
-            or not isinstance(next_request, dict)
+            not isinstance(overlay, RequestOverlay)
+            or overlay.status != "projected"
+            or not isinstance(overlay.request, dict)
+            or not overlay.verify_exact(overlay.request)
         ):
-            reason = str(proof.get("reason") or "") if isinstance(proof, Mapping) else ""
+            reason = overlay.reason if isinstance(overlay, RequestOverlay) else ""
             self._record_native(
                 session_id=session_id,
                 turn_id=turn_id,
@@ -1598,21 +1425,7 @@ class GlobalHotRuntime:
                 ),
             )
             return None
-        verified = self.verifier(
-            next_request,
-            proof,
-            marker=plan.marker,
-            bridge_body=plan.bridge_body,
-        )
-        if verified.get("status") != "verified":
-            self._record_native(
-                session_id=session_id,
-                turn_id=turn_id,
-                api_request_id=api_request_id,
-                plan=plan,
-                reason="projection_verification_failed",
-            )
-            return None
+        next_request = overlay.request
         turn_key = (session_id, turn_id)
         attempt_capacity_exceeded = False
         with self._lock:
@@ -1628,10 +1441,7 @@ class GlobalHotRuntime:
                 self._projections[attempt_key] = _Projection(
                     turn_key=turn_key,
                     attempt_seq=self._attempt_seq,
-                    proof=dict(proof),
-                    carrier_material_sha256=carrier_digest,
-                    carrier_material_length=carrier_length,
-                    carrier_material_kind=carrier_kind,
+                    overlay=overlay,
                     provider_key=provider_key,
                     request_model_sha256=self._request_model_sha256(next_request),
                     context_window_tokens=window,
@@ -1664,8 +1474,8 @@ class GlobalHotRuntime:
             api_request_id=api_request_id,
             status="projected",
             plan=plan,
-            request_sha256=str(proof.get("request_sha256") or ""),
-            bridge_body_sha256=str(proof.get("bridge_body_sha256") or ""),
+            request_sha256=overlay.request_sha256,
+            bridge_body_sha256=overlay.body_sha256,
         )
         return {
             "request": next_request,
@@ -1793,24 +1603,29 @@ class GlobalHotRuntime:
                 self._projections.pop(attempt_key, None)
                 self._transport.pop(attempt_key, None)
             raise
-        if not self._stage_provider_transport(
+        staged = self._stage_provider_transport(
             attempt_key,
             projection,
             plan,
             provider_key,
             transport_record,
             str(transport_schema_version or ""),
-        ):
+        )
+        if not staged:
             with self._lock:
                 self._executing.discard(attempt_key)
                 self._projections.pop(attempt_key, None)
                 self._transport.pop(attempt_key, None)
+            removal_reason = {
+                OVERLAY_REMOVED_FINAL_BUDGET: "final_provider_budget_removed",
+                OVERLAY_REMOVED_ESTIMATE_UNPROVEN: ("final_provider_estimate_unproven"),
+            }.get(projection.overlay.disposition, "execution_projection_drift")
             self._record_native(
                 session_id=attempt_key[0],
                 turn_id=attempt_key[1],
                 api_request_id=attempt_key[2],
                 plan=plan,
-                reason="execution_projection_drift",
+                reason=removal_reason,
             )
         with self._lock:
             self._executing.discard(attempt_key)

@@ -845,6 +845,10 @@ class GlobalHotScopedExecutionTests(unittest.TestCase):
                 self.assertNotIn(runtime_module.GLOBAL_HOT_END_BOUNDARY, rendered)
                 self.assertEqual(metadata.deliveries, [])
                 self.assertEqual(metadata.checks[-1]["status"], "native")
+                self.assertEqual(
+                    metadata.checks[-1]["reason"],
+                    "final_provider_budget_removed",
+                )
 
     def test_final_provider_body_requires_marker_body_end_and_current_anchor(self):
         def alter_marker(payload, plan):
@@ -888,6 +892,35 @@ class GlobalHotScopedExecutionTests(unittest.TestCase):
                 self.assertEqual(
                     metadata.checks[-1]["reason"], "execution_projection_drift"
                 )
+
+    def test_unproven_final_estimate_has_its_own_native_reason(self):
+        class UnprovenEstimateRecord(FakeTransportRecord):
+            @staticmethod
+            def _estimate(_payload: dict) -> dict:
+                return {
+                    "estimated_tokens": None,
+                    "estimate_source": "unknown",
+                    "estimate_confidence": "unknown",
+                }
+
+        metadata = FakeMetadata()
+        runtime = make_runtime(self.source, metadata)
+        projected = project(runtime)["request"]
+        _result, sent, record = execute_attempt(
+            runtime,
+            projected,
+            record=UnprovenEstimateRecord(),
+        )
+        post_attempt(runtime, record)
+
+        rendered = json.dumps(sent[0], ensure_ascii=False)
+        self.assertNotIn(runtime_module.GLOBAL_HOT_MARKER_PREFIX, rendered)
+        self.assertEqual(metadata.deliveries, [])
+        self.assertEqual(metadata.checks[-1]["status"], "native")
+        self.assertEqual(
+            metadata.checks[-1]["reason"],
+            "final_provider_estimate_unproven",
+        )
 
     def test_moa_transport_is_native_and_never_records_delivery(self):
         projected = project(self.runtime)["request"]
@@ -1481,7 +1514,7 @@ class GlobalHotAttemptLifecycleTests(unittest.TestCase):
             if text == "turn one":
                 entered.set()
                 self.assertTrue(release.wait(timeout=5))
-            return runtime_module.project_global_hot_request(request, **kwargs)
+            return runtime_module.project_request_overlay(request, **kwargs)
 
         runtime = GlobalHotRuntime(
             self.source,
@@ -1532,10 +1565,16 @@ class GlobalHotAttemptLifecycleTests(unittest.TestCase):
         self.assertNotIn("recent human", json.dumps(self.metadata.checks))
 
         blocked_metadata = FakeMetadata()
+
+        def invalid_projector(request, **kwargs):
+            overlay = runtime_module.project_request_overlay(request, **kwargs)
+            overlay.request["model"] = "tampered-after-proof"
+            return overlay
+
         blocked = GlobalHotRuntime(
             self.source,
             blocked_metadata,
-            verifier=lambda *_args, **_kwargs: {"status": "blocked"},
+            projector=invalid_projector,
             clock=lambda: iso(REFERENCE),
             estimator=lambda rows: 100,
         )
