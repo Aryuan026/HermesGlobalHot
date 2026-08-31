@@ -23,7 +23,7 @@ The Hermes compatibility lineage is:
   `ccd7bf350ca54a44b7351904e079f5ffdb64eec0`;
 - Hermes Continuity service contract: `hermes-continuity:canonical-source.v2`,
   plugin version `>=0.4,<1`, exact paired candidate
-  `12858c987332f658e0d969e6a39f03ff972cd74e`.
+  `559512c549db14fc64d73419f76e0682b7375429`.
 
 ## Extraction matrix
 

@@ -115,10 +115,10 @@ The reviewed host lineage is:
 - final generic host seams through:
   `ccd7bf350ca54a44b7351904e079f5ffdb64eec0`;
 - Hermes Continuity: `>=0.4,<1`; paired candidate
-  `12858c987332f658e0d969e6a39f03ff972cd74e`.
+  `559512c549db14fc64d73419f76e0682b7375429`.
 
 The eleven ordered Hermes patches are published by
-[Hermes Continuity](https://github.com/Aryuan026/HermesContinuity/tree/12858c987332f658e0d969e6a39f03ff972cd74e/patches).
+[Hermes Continuity](https://github.com/Aryuan026/HermesContinuity/tree/559512c549db14fc64d73419f76e0682b7375429/patches).
 The first eight provide the earlier runtime schemas, the next two align
 official manifest-v2 installation and joint Doctor, and H11 owns the shared
 request overlay. Registration fails visibly when the service, middleware,
@@ -136,9 +136,9 @@ Real Hermes and dual-plugin integration tests are opt-in through
 fixture is synthetic. Public unit CI and compatible-Hermes integration runs are
 reported separately; a Green unit workflow is not presented as host delivery
 proof. The current public-shaped plugin run covers 77 cases: 66 pass with
-eleven expected real-host skips. Public CI first replays all eleven patches from pure
-upstream and runs the 17 shared-overlay host tests. Against exact Hermes
-`ccd7bf3` and Continuity `12858c9`, all 77 plugin cases run and pass; the
+eleven expected real-host skips. Public CI first replays all eleven patches
+from pure upstream and runs the 17 shared-overlay host tests. Against exact Hermes
+`ccd7bf3` and Continuity `559512c`, all 77 plugin cases run and pass; the
 shared-overlay matrix additionally covers both two-plugin final-guard orders.
 
 The previously published revision received external review. This corrected

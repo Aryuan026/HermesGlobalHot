@@ -18,10 +18,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Install Hermes estimator dependency
+        run: python -m pip install PyYAML==6.0.3
       - name: Materialize paired Continuity and Hermes host
         run: |
           git clone --filter=blob:none https://github.com/Aryuan026/HermesContinuity.git "$RUNNER_TEMP/continuity"
-          git -C "$RUNNER_TEMP/continuity" checkout 12858c987332f658e0d969e6a39f03ff972cd74e
+          git -C "$RUNNER_TEMP/continuity" checkout 559512c549db14fc64d73419f76e0682b7375429
           git clone --filter=blob:none https://github.com/NousResearch/hermes-agent.git "$RUNNER_TEMP/hermes"
           git -C "$RUNNER_TEMP/hermes" checkout fcbd1076a93841fa88855acce810e342a5b78101
           for patch in \

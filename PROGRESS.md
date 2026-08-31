@@ -18,7 +18,7 @@
 - Verification: the public-shaped plugin suite runs 77 cases with eleven expected
   real-host skips and 66 passes; public CI also replays all eleven host patches
   and runs the 17 shared-overlay tests. Exact Hermes `ccd7bf3` plus Continuity
-  `12858c987332f658e0d969e6a39f03ff972cd74e` runs all 77/77 Green,
+  `559512c549db14fc64d73419f76e0682b7375429` runs all 77/77 Green,
   including both two-plugin final-guard orders, late provider-body expansion,
   attempt expiry/cap, metadata load order, and Global Hot drift without
   poisoning Continuity delivery.
