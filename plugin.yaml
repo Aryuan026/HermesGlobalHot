@@ -1,5 +1,5 @@
 name: hermes-global-hot
-version: 0.3.0
+version: 0.4.0
 manifest_version: 2
 api_version: 1
 description: Request-only cross-mouth canonical near-field context for each supported Hermes provider request
@@ -9,7 +9,7 @@ homepage: https://github.com/Aryuan026/HermesGlobalHot
 tags: [context, cross-channel, hot-context, receipts]
 requires_plugins:
   - id: hermes-continuity
-    version_range: ">=0.4,<1"
+    version_range: ">=0.5,<1"
 provides_hooks:
   - post_api_request
   - api_request_error

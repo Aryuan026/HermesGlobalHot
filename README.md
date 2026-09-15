@@ -108,22 +108,25 @@ usable headroom cannot be proven also stays native and visibly unsettled.
 
 ## Compatibility
 
-The reviewed host lineage is:
+The current Wave 6 source candidate is paired with:
 
-- Hermes upstream 0.20.5: `fcbd1076a93841fa88855acce810e342a5b78101`;
-- owner overlay: `c7c36f36ccee592a96f90e8acd9c6401808a02ad`;
-- final generic host seams through:
-  `5a680e5e38625fb3275b4bf6973a40d089ec11a7`;
-- Hermes Continuity: `>=0.4,<1`; paired candidate
-  `9a98acfe53ab74be5dae0b86c9b0303a9dab96bc`.
+- Hermes upstream 0.21.0: `29112bef099274229cadff79cdff7bf7b99c4b77`;
+- accepted generic host head:
+  `13900108780ae712059075200b243aa049c634cf`, tree
+  `5e82789d9984f8c338c09bdd0ebb31794af1f0dc`; and
+- Hermes Continuity `>=0.5,<1`, exact paired candidate
+  `8eb44f3e8afe5d134691d258607ee67af518d706`.
 
-The twelve ordered Hermes patches are published by
-[Hermes Continuity](https://github.com/Aryuan026/HermesContinuity/tree/9a98acfe53ab74be5dae0b86c9b0303a9dab96bc/patches).
-The first eight provide the earlier runtime schemas, the next two align
-official manifest-v2 installation and joint Doctor, and the final two own the
-shared request overlay plus host-accepted disposition. Registration fails
-visibly when the service, middleware, transport, or overlay schema is missing
-or incompatible.
+Hermes 0.21 treats `requires_plugins.version_range` as advisory dependency
+metadata and load ordering, not as a runtime version rejection. The exact
+assembly pin above is therefore the release authority; the manifest range
+states the supported source contract for installers and reviewers.
+
+The public 0.21 host-patch replay is deliberately deferred to the assembly's
+Wave 7 gate. The predecessor 0.20.5 patch series remains published by Hermes
+Continuity as historical control evidence; it is not the host identity claimed
+for this candidate. Registration fails visibly when the Continuity service,
+middleware, transport, or overlay schema is missing or incompatible.
 
 ## Test
 
@@ -133,12 +136,18 @@ python -B -m unittest discover -s tests -v
 ```
 
 Real Hermes and dual-plugin integration tests use `HERMES_SOURCE_ROOT` and
-`HERMES_CONTINUITY_ROOT`. Every committed transcript fixture is synthetic.
-Public CI replays all twelve patches from pure upstream, installs that host,
-exports both roots, runs the host overlay/middleware suite and all Global Hot
-real-host tests, then executes Continuity's paired production
-`AIAgent.run_conversation` entrypoint. The shared-overlay matrix covers both
-two-plugin final-guard orders.
+`HERMES_CONTINUITY_ROOT`. Every committed transcript fixture is synthetic. The
+Wave 6 mixed-Bot-Chat test begins with real 0.21 SessionDB rows and H13 proofs,
+loads both directory plugins through PluginManager discovery, captures the
+final provider body, and reads back Global Hot's body-free SQLite receipt. It
+proves that human and scheduled groups remain eligible, internal/delegated/
+unknown groups stay out, and scheduled-looking human text remains human.
+
+The current public workflow remains the predecessor 0.20.5 unit/control replay;
+the exact 0.21 mixed-origin test skips there. Publishing the full 0.21 patch
+chain and making Actions reproduce the current assembly belong to Wave 7. The
+shared-overlay tests already cover both two-plugin final-guard orders and all
+current final-budget outcomes locally against the exact accepted host.
 
 The previously published revision received external review. This corrected
 tree is the next external-review candidate; use the Git revision itself as the

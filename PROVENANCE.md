@@ -6,7 +6,18 @@ AsherieSystem revision
 `0adda1b` was used for navigation; every relevant Global Hot donor file checked
 against it was byte-identical to the requested `ddfb1e9` source.
 
-The Hermes compatibility lineage is:
+The current Hermes 0.21 compatibility lineage is:
+
+- upstream Hermes 0.21.0:
+  `29112bef099274229cadff79cdff7bf7b99c4b77`;
+- accepted generic host head:
+  `13900108780ae712059075200b243aa049c634cf`, tree
+  `5e82789d9984f8c338c09bdd0ebb31794af1f0dc`; and
+- Hermes Continuity service contract: `hermes-continuity:canonical-source.v2`,
+  plugin version `>=0.5,<1`, exact paired candidate
+  `8eb44f3e8afe5d134691d258607ee67af518d706`.
+
+The predecessor 0.20.5 compatibility lineage retained for public control CI is:
 
 - upstream Hermes 0.20.5: `fcbd1076a93841fa88855acce810e342a5b78101`;
 - reviewed owner overlay: `c7c36f36ccee592a96f90e8acd9c6401808a02ad`;
@@ -21,8 +32,8 @@ The Hermes compatibility lineage is:
   `113b4ab5285f92a1013c6a494eb33260a7f70140`,
   `969cf5bdbc3a110e475c02ed8e4ee84f64be32ed`, and
   `5a680e5e38625fb3275b4bf6973a40d089ec11a7`;
-- Hermes Continuity service contract: `hermes-continuity:canonical-source.v2`,
-  plugin version `>=0.4,<1`, exact paired candidate
+- predecessor Hermes Continuity service contract:
+  `hermes-continuity:canonical-source.v2`, exact paired candidate
   `9a98acfe53ab74be5dae0b86c9b0303a9dab96bc`.
 
 ## Extraction matrix
@@ -35,7 +46,7 @@ The Hermes compatibility lineage is:
 | Retain | donor recent-anchor tests | `tests/test_recent_interaction_anchor_core.py` | Retained pure donor selection/rendering evidence. Home labels are allowed here because this layer proves provenance rather than defining the Hermes provider protocol. |
 | Adapt | donor selection limits and anchor identity | `runtime.py` neutral candidate adapter/renderer | Preserves the two-hour/latest-two-input/latest-outcome/240/220/three-item behavior while replacing Home source predicates and visible labels with `human_input`, `scheduled_input`, `assistant_outcome`, closed `source_class`, and the actual Hermes source. |
 | Adapt | Home Global Hot owner projection, continuity sidecar binding, mouth snapshot, transport reconciliation, and post-LLM receipts | `runtime.py`, `metadata.py`, `__init__.py`, plus Hermes `hermes.request_overlay.v2` | Replaced Home surfaces with a Continuity source service, per-turn freeze, shared host request carrier/proof, and body-free SQLite delivery ledger. H11 deletes the plugin-local projector while preserving the donor compiler and frozen anchor unchanged. |
-| Adapt | Home/Bridge/mobile/cron/wakeup source labels | neutral Continuity complete dialogue groups | Continuity supplies a closed source class. Human dialogue and durably verified scheduled cron/wakeup dialogue are eligible; internal, delegated, tool, and unknown groups are rejected. |
+| Adapt | Home/Bridge/mobile/cron/wakeup source labels | neutral Continuity complete dialogue groups | Continuity `>=0.5` supplies a closed H13-derived source class. Human dialogue and durably verified scheduled cron/wakeup dialogue are eligible; internal, delegated, tool, and unknown groups are rejected. Visible text and the session/source label never mint scheduled or human authority. |
 | Do not port | `HotContextStore`, `UpstreamContextMergeStore`, JSON ownership, export/recall ranking, retrieval, legacy segment cutover, Warm/Cold/search tools | none | Hermes and Continuity retain their own storage/search responsibilities; this repository owns no durable message corpus. |
 | Do not port | Home `PromptAssembly`, runtime `main`, service startup, cache/window scanners, gateway/mobile/chatbox surfaces | none | Those are AsherieSystem host owners, not portable Hermes plugin contracts. |
 

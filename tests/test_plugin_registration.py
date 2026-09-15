@@ -178,7 +178,8 @@ class PluginRegistrationTests(unittest.TestCase):
     def test_manifest_has_no_model_tool_or_cursor_configuration(self):
         manifest = (ROOT / "plugin.yaml").read_text(encoding="utf-8")
         self.assertNotIn("provides_commands", manifest)
-        self.assertIn('version_range: ">=0.4,<1"', manifest)
+        self.assertIn("version: 0.4.0", manifest)
+        self.assertIn('version_range: ">=0.5,<1"', manifest)
         self.assertNotIn("provides_tools", manifest)
         self.assertNotIn("lookback_hours", manifest)
         self.assertNotIn("max_messages", manifest)

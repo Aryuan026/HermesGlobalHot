@@ -54,18 +54,22 @@ storage bug.
 
 ## Release gates
 
-1. Keep donor, runtime, metadata, and request-carrier suites Green, then pass
-   the cross-repo real-host proof through plugin discovery,
-   `AIAgent.run_conversation`, final provider body, post/error settlement,
-   SQLite readback, and manager unload/reload.
-2. Replace the obsolete two-commit repository history with the reviewed tree.
-3. Push the exact revision for external web review.
-4. Address external findings and record the accepted revision.
-5. Only then perform a reversible disabled installation under separate
-   authorization.
-6. Enable and run live cross-mouth canaries only after deployment approval.
+1. For Wave 6, keep the donor compiler, frozen anchor, runtime budget, overlay,
+   and metadata contracts unchanged. Declare Continuity `>=0.5,<1` and pin the
+   exact accepted source in the assembly so the service is backed by the H13
+   group classifier; Hermes currently treats the manifest range as advisory.
+2. Pass the mixed Bot Chat path from real 0.21 SessionDB origin proofs through
+   Continuity, Global Hot, the final provider body, post settlement, and the
+   body-free SQLite receipt. Keep both execution-middleware orders and every
+   final-budget disposition Green.
+3. Push the exact revision for independent external review and address only
+   findings inside the Wave 6 contract.
+4. In Wave 7, publish and replay the complete 0.21 host patch series in public
+   Actions, then run the paired production entrypoint and official disabled
+   install/Doctor/remove lifecycle.
+5. Install, deploy, enable, and run live cross-mouth canaries only under their
+   later explicit gates.
 
-The first published candidate completed gates 1-3 and received external
-review. Its P1 findings are being incorporated in the next exact-revision
-candidate. Installation and live observation remain separate, later states
-and are not implied by publication.
+The current stop condition is a Wave 6 external-review source candidate.
+Installation and live observation remain separate later states and are not
+implied by publication.

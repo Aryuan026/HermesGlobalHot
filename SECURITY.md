@@ -31,6 +31,13 @@ session appears, or a scan cap is exceeded. Clearly classified policy-excluded
 groups are omitted by Continuity before their bodies cross the service
 boundary; that omission is revision-bound and body-free traced.
 
+Source authority comes only from the host-owned H13 proof consumed by
+Continuity over the complete logical group and its physical obligations.
+Global Hot never classifies a row from user-role shape, Bot Chat membership,
+session `source`, channel name, or scheduled-looking text. Missing/pre-H13,
+internal, and delegated material cannot acquire human or scheduled authority at
+this boundary.
+
 A `delivered` state requires the same `hermes.transport.v3` record that reached
 the final provider SDK body, one exact projection, a successful provider return,
 `post_api_request`, and a canonical body-free receipt. Middleware projection,
