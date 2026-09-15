@@ -1,9 +1,36 @@
 # Progress
 
-## 2026-09-15 — Hermes Agent 0.21.0 Wave 6 source candidate
+## 2026-09-15 — Hermes Agent 0.21.0 Wave 7 public replay candidate
 
-- Lifecycle: active, Global-Hot-only external-review candidate. Wave 7 is not
-  open and no installation, deployment, enablement, or live canary occurred.
+- Wave 6 was independently accepted at
+  `01918856aa46f80ca17dd67d079eed1b7261f85f`, tree
+  `5650584c434de4ba086e0f40d45a447ee40f9302`, paired with Continuity
+  `8eb44f3e8afe5d134691d258607ee67af518d706` and Hermes host
+  `13900108780ae712059075200b243aa049c634cf`.
+- This Wave 7 change does not modify Global Hot production code, the donor
+  compiler, frozen anchor, metadata schema, projection policy, final-budget
+  logic, or receipt semantics.
+- Public Actions now use Continuity
+  `ee23a88632e5a914b619047499cf360d7044c925` as the single immutable authority
+  for all 35 Hermes 0.21 patches. Each Python job starts from upstream
+  `29112bef099274229cadff79cdff7bf7b99c4b77`, verifies patch digests and tree
+  `5e82789d9984f8c338c09bdd0ebb31794af1f0dc`, then runs the host seam matrix,
+  both plugin suites, and the paired production `AIAgent.run_conversation`
+  entrypoint.
+- The same disposable job installs both exact public refs with official
+  `--no-enable`, proves both remain disabled, runs native Continuity Doctor and
+  joint Global Hot Doctor, removes both through the official CLI, and requires
+  empty plugin directories and install metadata afterward.
+- Global Hot does not carry a second copy of the patch series. The immutable
+  Continuity revision and its digest manifest are the public replay authority.
+- Lifecycle remains: external-review candidate only. Nothing was installed in
+  a target profile, enabled, deployed, sent to a network provider, or exercised
+  through a real mouth.
+
+## 2026-09-15 — Hermes Agent 0.21.0 Wave 6 accepted source
+
+- Lifecycle: independently accepted source scope. No installation, deployment,
+  enablement, or live canary occurred at this checkpoint.
 - Manifest version: 0.4.0. The declared Continuity compatibility floor is now
   `>=0.5,<1`, matching the first service candidate whose complete-group source
   classes are derived from the accepted H13 host proof. Hermes 0.21 uses this
@@ -30,10 +57,9 @@
   tests retain both two-plugin execution orders, final-budget removal,
   estimate-unproven removal, kept delivery, drift rejection, retry/fallback,
   and body-free receipt coverage.
-- The public workflow still replays the installed-control 0.20.5 host and skips
-  the new H13 test. Public 0.21 patch replay and disabled lifecycle belong to
-  Wave 7; current evidence must not be described as public Actions, install, or
-  natural cross-mouth behavior.
+- At this historical checkpoint the public workflow still replayed the 0.20.5
+  control host. The successor Wave 7 section above owns the public 0.21 replay
+  and disposable disabled-lifecycle evidence.
 
 ## Retained product and predecessor evidence
 
@@ -94,6 +120,6 @@
   the Hermes production path renders only `human_input`, `scheduled_input`,
   and `assistant_outcome` with closed source class and actual Hermes source.
 
-The next review should assess only the Wave 6 dependency floor and real H13 to
-final-provider-body mixed Bot Chat proof. Installation and deployment remain
-separate later gates.
+The next review should assess the Wave 7 public replay, exact-ref disabled
+lifecycle, and single-authority pairing. Target installation and deployment
+remain separate later gates.

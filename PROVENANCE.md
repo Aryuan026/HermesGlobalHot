@@ -14,8 +14,14 @@ The current Hermes 0.21 compatibility lineage is:
   `13900108780ae712059075200b243aa049c634cf`, tree
   `5e82789d9984f8c338c09bdd0ebb31794af1f0dc`; and
 - Hermes Continuity service contract: `hermes-continuity:canonical-source.v2`,
-  plugin version `>=0.5,<1`, exact paired candidate
-  `8eb44f3e8afe5d134691d258607ee67af518d706`.
+  plugin version `>=0.5,<1`, accepted production ancestor
+  `8eb44f3e8afe5d134691d258607ee67af518d706`, and exact public Wave 7 replay
+  authority `ee23a88632e5a914b619047499cf360d7044c925`.
+
+The exact Continuity Wave 7 revision is the sole public copy of the 35 ordered
+Hermes 0.21 patches and their SHA-256 manifest. Global Hot consumes that
+immutable authority in its own workflow rather than publishing a second patch
+series that could drift.
 
 The predecessor 0.20.5 compatibility lineage retained for public control CI is:
 

@@ -108,25 +108,30 @@ usable headroom cannot be proven also stays native and visibly unsettled.
 
 ## Compatibility
 
-The current Wave 6 source candidate is paired with:
+The accepted Wave 6 runtime and current Wave 7 public-replay candidate are
+paired with:
 
 - Hermes upstream 0.21.0: `29112bef099274229cadff79cdff7bf7b99c4b77`;
 - accepted generic host head:
   `13900108780ae712059075200b243aa049c634cf`, tree
   `5e82789d9984f8c338c09bdd0ebb31794af1f0dc`; and
-- Hermes Continuity `>=0.5,<1`, exact paired candidate
-  `8eb44f3e8afe5d134691d258607ee67af518d706`.
+- Hermes Continuity `>=0.5,<1`, accepted production ancestor
+  `8eb44f3e8afe5d134691d258607ee67af518d706`, published through the exact Wave 7
+  replay authority `ee23a88632e5a914b619047499cf360d7044c925`.
 
 Hermes 0.21 treats `requires_plugins.version_range` as advisory dependency
 metadata and load ordering, not as a runtime version rejection. The exact
 assembly pin above is therefore the release authority; the manifest range
 states the supported source contract for installers and reviewers.
 
-The public 0.21 host-patch replay is deliberately deferred to the assembly's
-Wave 7 gate. The predecessor 0.20.5 patch series remains published by Hermes
-Continuity as historical control evidence; it is not the host identity claimed
-for this candidate. Registration fails visibly when the Continuity service,
-middleware, transport, or overlay schema is missing or incompatible.
+The 35-patch public 0.21 host series has one authority in the exact Continuity
+revision above. This repository's workflow checks out that immutable revision,
+replays the series from pure upstream, verifies the assembled tree, and then
+runs the same paired host and disabled-lifecycle gates independently. Global
+Hot deliberately does not duplicate the patch artifacts. The predecessor
+0.20.5 series remains historical control evidence only. Registration fails
+visibly when the Continuity service, middleware, transport, or overlay schema
+is missing or incompatible.
 
 ## Test
 
@@ -143,16 +148,18 @@ final provider body, and reads back Global Hot's body-free SQLite receipt. It
 proves that human and scheduled groups remain eligible, internal/delegated/
 unknown groups stay out, and scheduled-looking human text remains human.
 
-The current public workflow remains the predecessor 0.20.5 unit/control replay;
-the exact 0.21 mixed-origin test skips there. Publishing the full 0.21 patch
-chain and making Actions reproduce the current assembly belong to Wave 7. The
-shared-overlay tests already cover both two-plugin final-guard orders and all
-current final-budget outcomes locally against the exact accepted host.
+The current public workflow independently starts from pure Hermes 0.21.0,
+verifies the 35 patch digests and assembled tree, runs the accepted host seam
+matrix on Python 3.11 and 3.12, runs both plugin suites and the paired production
+entrypoint, then performs exact-ref `--no-enable` installs, native/joint Doctor,
+official removal, and empty-metadata readback. The shared-overlay tests cover
+both two-plugin final-guard orders and all current final-budget outcomes.
 
-The previously published revision received external review. This corrected
-tree is the next external-review candidate; use the Git revision itself as the
+Wave 6 was independently accepted at
+`01918856aa46f80ca17dd67d079eed1b7261f85f`. The current tree adds only the
+Wave 7 public replay and release evidence surface; use its Git revision as the
 publication identity rather than a self-referential hash in this file. It is
-not installed, enabled, deployed, or live-verified.
+not installed in a target profile, enabled, deployed, or live-verified.
 
 The exact donor lineage and intentional omissions are recorded in
 [`PROVENANCE.md`](PROVENANCE.md); trust and persistence boundaries are in

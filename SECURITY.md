@@ -69,3 +69,8 @@ unproven context provenance or headroom likewise remain native.
 Use GitHub private security advisories for vulnerabilities. Never attach real
 transcripts, credentials, local database excerpts, or deployment paths to a
 public report.
+
+The Wave 7 workflow uses only synthetic fixtures and a disposable Hermes home.
+Its official installs are exact-ref, disabled, and removed in the same job; a
+Green run is public lifecycle evidence, not target-profile installation,
+enablement, deployment, or permission to touch live conversation data.

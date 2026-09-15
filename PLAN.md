@@ -64,12 +64,14 @@ storage bug.
    final-budget disposition Green.
 3. Push the exact revision for independent external review and address only
    findings inside the Wave 6 contract.
-4. In Wave 7, publish and replay the complete 0.21 host patch series in public
-   Actions, then run the paired production entrypoint and official disabled
+4. In Wave 7, consume Continuity's immutable public authority for the complete
+   0.21 host patch series, replay it from pure upstream in this repository's
+   own Actions, then run the paired production entrypoint and official disabled
    install/Doctor/remove lifecycle.
 5. Install, deploy, enable, and run live cross-mouth canaries only under their
    later explicit gates.
 
-The current stop condition is a Wave 6 external-review source candidate.
-Installation and live observation remain separate later states and are not
+The current stop condition is a Wave 7 public-replay external-review candidate.
+Only disposable `--no-enable` lifecycle verification is in scope. Target
+installation and live observation remain separate later states and are not
 implied by publication.

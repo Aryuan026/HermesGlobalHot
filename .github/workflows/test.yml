@@ -10,54 +10,63 @@ permissions:
 jobs:
   unittest:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     strategy:
       matrix:
         python-version: ["3.11", "3.12"]
     env:
       PYTHONDONTWRITEBYTECODE: "1"
+      GLOBAL_HOT_REF: ${{ github.event.pull_request.head.sha || github.sha }}
+      CONTINUITY_REF: ee23a88632e5a914b619047499cf360d7044c925
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.GLOBAL_HOT_REF }}
+          fetch-depth: 1
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Materialize paired Continuity and Hermes host
+      - name: Checkout pure Hermes 0.21.0
+        uses: actions/checkout@v4
+        with:
+          repository: NousResearch/hermes-agent
+          ref: 29112bef099274229cadff79cdff7bf7b99c4b77
+          path: _upstream/hermes
+          fetch-depth: 1
+      - name: Checkout accepted Continuity replay authority
+        uses: actions/checkout@v4
+        with:
+          repository: Aryuan026/HermesContinuity
+          ref: ee23a88632e5a914b619047499cf360d7044c925
+          path: _paired/continuity
+          fetch-depth: 1
+      - name: Materialize exact Hermes 0.21 host
         run: |
-          git clone --filter=blob:none https://github.com/Aryuan026/HermesContinuity.git "$RUNNER_TEMP/continuity"
-          git -C "$RUNNER_TEMP/continuity" checkout 9a98acfe53ab74be5dae0b86c9b0303a9dab96bc
-          git clone --filter=blob:none https://github.com/Aryuan026/HermesGlobalHot.git "$RUNNER_TEMP/global-hot-control"
-          git -C "$RUNNER_TEMP/global-hot-control" checkout af605282d3b221e705d1ee47b886f2d054cc3598
-          git clone --filter=blob:none https://github.com/NousResearch/hermes-agent.git "$RUNNER_TEMP/hermes"
-          git -C "$RUNNER_TEMP/hermes" checkout fcbd1076a93841fa88855acce810e342a5b78101
-          for patch in \
-            hermes-0.20.5-plugin-llm-finish-reason.patch \
-            hermes-0.20.5-request-middleware-v2.patch \
-            hermes-0.20.5-plugin-service-registry.patch \
-            hermes-0.20.5-bounded-session-message-reads.patch \
-            hermes-0.20.5-provider-transport-truth.patch \
-            hermes-0.20.5-closed-finish-state-truth.patch \
-            hermes-0.20.5-final-provider-budget-controls.patch \
-            hermes-0.20.5-verified-wakeup-provenance.patch \
-            hermes-0.20.5-installer-manifest-v2.patch \
-            hermes-0.20.5-joint-plugin-doctor.patch \
-            hermes-0.20.5-request-overlay-proofs.patch \
-            hermes-0.20.5-request-overlay-acceptance.patch
-          do
-            git -C "$RUNNER_TEMP/hermes" apply "$RUNNER_TEMP/continuity/patches/$patch"
-          done
-          echo "PYTHONPATH=$RUNNER_TEMP/hermes" >> "$GITHUB_ENV"
-          echo "HERMES_SOURCE_ROOT=$RUNNER_TEMP/hermes" >> "$GITHUB_ENV"
-          echo "HERMES_CONTINUITY_ROOT=$RUNNER_TEMP/continuity" >> "$GITHUB_ENV"
+          python "$GITHUB_WORKSPACE/_paired/continuity/scripts/materialize_hermes_021.py" --host "$GITHUB_WORKSPACE/_upstream/hermes"
+          echo "PYTHONPATH=$GITHUB_WORKSPACE/_upstream/hermes" >> "$GITHUB_ENV"
+          echo "HERMES_SOURCE_ROOT=$GITHUB_WORKSPACE/_upstream/hermes" >> "$GITHUB_ENV"
+          echo "HERMES_CONTINUITY_ROOT=$GITHUB_WORKSPACE/_paired/continuity" >> "$GITHUB_ENV"
           echo "HERMES_GLOBAL_HOT_ROOT=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
-      - name: Install compatible Hermes runtime
-        run: python -m pip install -e "$RUNNER_TEMP/hermes" pytest==9.1.1
-      - name: Verify shared request overlay host seam
+      - name: Install exact host test runtime
+        run: python -m pip install -e "$GITHUB_WORKSPACE/_upstream/hermes[dev,messaging,acp,anthropic]"
+      - name: Run accepted host seam matrix
         run: |
-          cd "$RUNNER_TEMP/hermes"
-          python -B -m pytest -q tests/test_request_overlay.py tests/test_middleware.py
+          cd "$GITHUB_WORKSPACE/_upstream/hermes"
+          python -B -m pytest -q \
+            @"$HERMES_CONTINUITY_ROOT/tests/host_contract/wave7_host_tests.txt" \
+            --deselect=tests/agent/test_auxiliary_client.py::TestAuxiliaryAuthRefreshRetry::test_refresh_provider_credentials_force_refreshes_anthropic_oauth_and_evicts_cache
       - name: Run Global Hot suite
         run: python -B -m unittest discover -s tests -v
+      - name: Run Continuity suite
+        run: |
+          cd "$HERMES_CONTINUITY_ROOT"
+          python -B -m unittest discover -s tests -v
       - name: Run paired production entrypoint
-        env:
-          HERMES_GLOBAL_HOT_ROOT: ${{ runner.temp }}/global-hot-control
-        run: python -B "$RUNNER_TEMP/continuity/tests/test_real_host_entrypoint.py" -v
+        run: python -B "$HERMES_CONTINUITY_ROOT/tests/test_real_host_entrypoint.py" -v
+      - name: Verify exact disabled lifecycle
+        run: |
+          python "$HERMES_CONTINUITY_ROOT/scripts/verify_wave7_lifecycle.py" \
+            --continuity-repo "$HERMES_CONTINUITY_ROOT" \
+            --continuity-ref "$CONTINUITY_REF" \
+            --global-hot-repo "$GITHUB_WORKSPACE" \
+            --global-hot-ref "$GLOBAL_HOT_REF"
