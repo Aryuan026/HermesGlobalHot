@@ -1,141 +1,160 @@
 # Hermes Global Hot
 
-Hermes Global Hot gives one Hermes profile a small shared near-field across its
-different mouths. A QQ, web, CLI, cron, wakeup, or custom-front-end turn can see
-the most recent complete dialogue from the other sessions without merging
-their native histories.
+**让同一个 Hermes 的不同会话共享一点近期动静：刚刚聊了什么、定时唤醒做了什么，能回到眼前这轮对话里。**
 
-It is an ordinary request plugin, not the selected Hermes memory backend. That
-is what lets it run alongside any long-term memory provider: Global Hot handles
-the immediate conversational room tone, while the memory backend remains free
-to own recall, writing, compression, and lifecycle policy.
+这是一个实验性的跨会话工作上下文插件，不是长期记忆库，也不合并各会话的原始历史。
+它从 [Continuity](https://github.com/Aryuan026/HermesContinuity) 取得已验证来源，
+把最近两小时内很少量的完整对话引用递送给当前请求。
+简单区分：**Continuity 接同一段对话的过去，Global Hot 接其他会话的近期动静。**
 
-## What is projected
+## 支持版本与当前状态
 
-The source is the profile-local `hermes-continuity:canonical-source.v2`
-service. Global Hot never opens Hermes `state.db` and never imports Continuity's
-private adapter or metadata schema.
+核对日期：**2026-10-23**。插件版本为 **0.3.0**；下文使用已审查提交
+[af60528](https://github.com/Aryuan026/HermesGlobalHot/commit/af605282d3b221e705d1ee47b886f2d054cc3598)，
+**不是直接安装 main**。公开主线落后于这个集成提交，本次文档调整不包含它的运行时代码。
 
-For each logical turn it freezes one bounded two-hour source snapshot, then
-uses the owner-reviewed AsherieSystem near-field limits through a
-Hermes-neutral production adapter:
+| Hermes 版本 | 对应代码与使用条件 | 状态 |
+| --- | --- | --- |
+| **0.20.5** | 上述 Global Hot 固定提交＋已补丁宿主＋兼容的 Continuity | 公开集成基线；来源、递送结算与安装生命周期已有验证 |
+| **0.21.3** | 单独移植的历史宿主／双插件装配线 | 已有阶段验收，不能按 0.20.5 补丁直接安装 |
+| **0.21.5** | 同一 Global Hot 提交＋[Continuity 75aecd6](https://github.com/Aryuan026/HermesContinuity/commit/75aecd6d6544f3dcb313c42bf917c4a015a31cea) ＋对应已补丁宿主 | 已验证的固定配对；本仓不提供完整公开宿主安装包 |
+| **0.22.0** | 仅开始本机宿主插件底座迁移 | **尚未取得本插件运行支持** |
 
-- at most the latest two eligible human or scheduled inputs;
-- the assistant outcome from the latest selected turn;
-- 240 characters per human item and 220 for the assistant outcome;
-- at most three quoted items in total; and
-- a five-minute future-clock tolerance.
+其他版本未验证。`Continuity >=0.4,<1` 是**插件依赖范围**，不是 Hermes 宿主版本范围；
+同名版本号或新上游发布都不能替代配对验证。
 
-Only complete user/final-assistant groups with a closed source classification
-are eligible. Global Hot asks Continuity for exactly `human` and `scheduled`;
-clearly classified `internal`, `delegated`, `tool`, and `unknown` groups are
-counted and omitted before their bodies cross the service boundary. Scheduled
-wakeup dialogue is eligible only when Continuity has durable host provenance.
-The current session's compression lineage is excluded. Ambiguous, incomplete,
-or over-cap source history still blocks the whole hot window instead of
-silently presenting a partial view as complete.
+## 最近维护了什么
 
-The production-visible fact roles are `human_input`, `scheduled_input`, and
-`assistant_outcome`. Each fact carries the closed `source_class` and the actual
-Hermes `source`; Asherie/Home routing labels remain only in the frozen donor
-reference and provenance record, never in the production eligibility path.
+- **不只认“来自哪个频道”**：只选择已验证的人类／定时输入；内部通知、委派和来源
+  不明的组不进入热场，不靠消息前缀授予身份。
+- **双插件能共存**：载体归属、重试／fallback 和最终预算由宿主公共 overlay 接缝负责，
+  两个插件不互相覆盖，也不各造一套投影器。
+- **看最终递送，不把“准备好了”算成功**：只在最终 provider body 与成功结算对齐后
+  写无正文回执；这些是固定集成提交的能力，不是本次文档新增的功能。
 
-The selected material then passes through the extracted Global Hot compiler,
-which retains canonical-alias and exact-body deduplication, structural ordering,
-hard row/character bounds, source revisions, plan digests, and body-free traces.
+## 宿主前提
 
-## Each supported physical provider request
+Required contracts: `hermes-continuity:canonical-source.v2`,
+`hermes.middleware.v2`, `hermes.transport.v3` and
+`hermes.request_overlay.v2`. Missing or incompatible contracts fail visibly.
+The exact public baseline's twelve foundation patches are available at
+[Continuity's reviewed patch ref](https://github.com/Aryuan026/HermesContinuity/tree/9a98acfe53ab74be5dae0b86c9b0303a9dab96bc/patches);
+use the additional indexed patches only with their own declared host lane.
 
-Global Hot registers `llm_request`, `llm_execution`, `post_api_request`, and
-`api_request_error` boundaries. The frozen turn packet is adapted again for
-each supported physical request, including SDK retries, tool follow-ups,
-compatible provider fallbacks, and later continuations within the same logical
-turn. A new logical turn reads a fresh two-hour window even when the source is
-unchanged.
+## Highlights
 
-Projection changes only the last real user carrier and never inserts a new role
-or message. String, text-block, image/document, Anthropic tool-result, Codex,
-and Bedrock request shapes are handled without turning tool-only rows into a
-fake user. The block has a dynamic marker and an explicit end boundary; quoted
-history cannot masquerade as the current user's instructions.
+- **Cross-mouth awareness without transcript merging.** A conversation can
+  pick up a recent wakeup or another channel's exchange within the same profile.
+- **A deliberately small hot field.** Two recent eligible inputs and the
+  latest selected assistant outcome provide room tone, not a second history.
+- **Present on each supported physical request.** Retry, tool follow-up and
+  compatible fallback reuse the frozen turn packet; a new turn reads afresh.
+- **Verified source, not text-based identity.** Only classified human and
+  scheduled groups are eligible. A prefix or channel label cannot manufacture
+  a scheduled provenance proof.
+- **Honest final delivery.** Status separates planning/checks, deliberate
+  budget removal and settled delivery receipts.
 
-Hermes `hermes.transport.v3` captures the final provider body after
-provider-specific preflight, Relay rewriting, and ordinary transport
-transforms. Global Hot registers a final, non-expansive budget guard: an
-authoritative host window is used as reported, catalog/cached windows retain a
-10% margin, and unknown or fallback windows stay native. The host's final-body
-estimate includes messages, top-level prompts, tools/schema, attachments, and
-framing margin; it is still an explicitly labelled conservative heuristic, not
-a provider-tokenizer proof.
+## How it works
 
-A canonical delivery receipt is written only when that final body contains
-this exact projection once, fits the proven usable window under that estimate,
-the provider call succeeds, and `post_api_request` receives the same settled
-transport record. Errors, drift, missing post hooks, ambiguous transport, and
-receipt-storage failures never become `delivered`.
+1. Ask Continuity's profile-local read-only service for complete dialogue
+   groups in the last two hours, excluding the current session's lineage.
+2. Select and deduplicate a bounded near-field; freeze it for this logical turn.
+3. Adapt it to each supported real-user request carrier. Quoted context has an
+   explicit boundary and does not become the current user's instruction.
+4. The host owns overlay proofs and the final SDK-body budget decision after
+   ordinary provider transforms.
+5. Write a delivery receipt only for the same successful, settled, unambiguous
+   transport record containing the exact overlay once.
 
-There is deliberately no delivery cursor: the hot field is supposed to be
-present again on the next physical request and the next turn. `/global-hot-status`
-reports the latest body-free check plus the last canonical delivery receipt.
-Attempts that miss both terminal hooks are bounded by a process-private count
-cap and TTL; expiry revokes settlement authority, while an execution currently
-in progress is protected from the sweeper.
+There is no delivery cursor: repeated projection is the feature. There is no
+new memory store, search tool, compressor or plugin-local final tokenizer.
 
-## Storage and privacy
+## Installation
 
-The plugin stores no conversation bodies. Its profile-local SQLite ledger
-contains session hashes, turn/request identities, source and plan digests,
-selection counts, statuses, and timestamps only. The ledger claims a closed
-plugin owner and refuses foreign-owned, canonical-Hermes, or unclaimed nonempty
-databases. Hermes remains the transcript owner; Continuity remains the
-canonical-source owner.
-
-`api_mode=codex_app_server` and subagent calls are unsupported. MoA prepared
-requests do not currently expose an unambiguous final provider carrier, so
-Global Hot removes its projection: the provider receives the native request,
-not an unreceipted hot field. A provider fallback whose context provenance or
-usable headroom cannot be proven also stays native and visibly unsettled.
-
-## Compatibility
-
-The reviewed host lineage is:
-
-- Hermes upstream 0.20.5: `fcbd1076a93841fa88855acce810e342a5b78101`;
-- owner overlay: `c7c36f36ccee592a96f90e8acd9c6401808a02ad`;
-- final generic host seams through:
-  `7c183e81832c81e29f6d095a15bb7c8cd080ee5c`;
-- Hermes Continuity: `>=0.4,<1`; paired candidate
-  `3b036e850223b9d8c8630574b71c9ee4cb00f766`.
-
-The eight ordered Hermes patches are published by
-[Hermes Continuity](https://github.com/Aryuan026/HermesContinuity/tree/main/patches).
-Registration fails visibly when the service, middleware, or transport schema is
-missing or incompatible.
-
-## Test
+Use the correct patched **0.20.5** host for the public baseline, initialize the
+profile, and install its compatible Continuity first. Pin Global Hot rather
+than cloning or installing an arbitrary main:
 
 ```bash
+hermes plugins install Aryuan026/HermesGlobalHot \
+  --ref af605282d3b221e705d1ee47b886f2d054cc3598 --no-enable
+hermes plugins doctor hermes-global-hot --with hermes-continuity
+hermes plugins enable hermes-continuity
+hermes plugins enable hermes-global-hot
+```
+
+Joint Doctor loads both plugins in one temporary initialized profile. A
+single-plugin Doctor without Continuity cannot prove the required service
+binding. Do not substitute the 0.20.5 patch set for a 0.21.x port.
+
+## Configuration and limits
+
+The near-field policy is intentionally fixed:
+
+- Window: **two hours**, with a five-minute future-clock tolerance.
+- Inputs: at most the latest **two human/scheduled items**, **240 characters**
+  each.
+- Outcome: the latest selected assistant response, **220 characters**.
+- Total: at most **three quoted items**.
+- The current session's compression lineage is excluded.
+- Internal, delegated, tool and unknown groups are omitted; ambiguous,
+  incomplete or over-cap history blocks the window rather than pretending a
+  partial read is complete.
+
+Runtime settings in the reviewed [manifest](https://github.com/Aryuan026/HermesGlobalHot/blob/af605282d3b221e705d1ee47b886f2d054cc3598/plugin.yaml)
+bound projection size, cached turns and orphan-attempt lifetime. The reviewed
+receipt DB is fixed under the profile's
+`plugin-data/<host-owned-plugin-namespace>/global_hot.sqlite3`. It contains
+only hashes, IDs, counts, statuses and times, never conversation bodies.
+Global Hot does not open `state.db` or import Continuity private modules.
+
+**Two hours is a delivery horizon, not a database deletion policy.** This is
+experimental working context, not permanent shared memory. The final host
+estimate is a heuristic, not an exact tokenizer guarantee. Unknown context
+provenance and unsafe fallback stay native; `codex_app_server`, subagent calls
+and ambiguous MoA projection are unsupported.
+
+## Verification
+
+Check out the reviewed Global Hot ref before running its tests. In a Python
+environment containing the dependencies of the exact paired host:
+
+```bash
+PYTHONPATH=/path/to/patched/hermes \
+HERMES_SOURCE_ROOT=/path/to/patched/hermes \
+HERMES_CONTINUITY_ROOT=/path/to/compatible/HermesContinuity \
 python -B -m unittest discover -s tests -v
 ```
 
-Real Hermes and dual-plugin integration tests are opt-in through
-`HERMES_SOURCE_ROOT` and `HERMES_CONTINUITY_ROOT`. Every committed transcript
-fixture is synthetic. Public unit CI and compatible-Hermes integration runs are
-reported separately; a Green unit workflow is not presented as host delivery
-proof. The current public-shaped run covers 95 cases: 86 pass with nine
-expected real-host skips. Against exact Hermes `7c183e8` and Continuity
-`3b036e8`, all 95 cases run and pass; the focused runtime, metadata, and
-registration matrix is 52/52.
+The paired production-entrypoint gate lives in Continuity:
+`tests/test_real_host_entrypoint.py`; set its `HERMES_GLOBAL_HOT_ROOT` too.
+Without the real roots, conditional skips are not host proof. Synthetic
+provider/transport tests prove wiring, not live cross-mouth effectiveness.
 
-The previously published revision received external review. This corrected
-tree is the next external-review candidate; use the Git revision itself as the
-publication identity rather than a self-referential hash in this file. It is
-not installed, enabled, deployed, or live-verified.
+## Maintenance
 
-The exact donor lineage and intentional omissions are recorded in
-[`PROVENANCE.md`](PROVENANCE.md); trust and persistence boundaries are in
-[`SECURITY.md`](SECURITY.md).
+For each Hermes release, verify the source-service contract, both overlay
+orders, retries/fallback, final-budget removal, settlement and joint
+install/Doctor/remove. Update this version list with exact host, Continuity
+and Global Hot refs and the proven layer; do not widen support by version
+number alone.
+
+Source review, local tests, installation/enablement, actual delivery and natural
+QQ/WeChat continuity remain distinct. No new runtime result is claimed by this
+README update.
+
+## Documentation
+
+- [Reviewed PROGRESS.md](https://github.com/Aryuan026/HermesGlobalHot/blob/af605282d3b221e705d1ee47b886f2d054cc3598/PROGRESS.md):
+  dated source and lifecycle evidence; older status belongs to its date.
+- [Reviewed PROVENANCE.md](https://github.com/Aryuan026/HermesGlobalHot/blob/af605282d3b221e705d1ee47b886f2d054cc3598/PROVENANCE.md):
+  AsherieSystem compiler/anchor lineage and host requirements.
+- [Reviewed SECURITY.md](https://github.com/Aryuan026/HermesGlobalHot/blob/af605282d3b221e705d1ee47b886f2d054cc3598/SECURITY.md):
+  source, profile and persistence boundaries.
+- [PLAN.md](PLAN.md): product scope; its staged release notes are historical,
+  not a substitute for the compatibility list above.
 
 ## License
 
-MIT.
+[MIT](LICENSE).
